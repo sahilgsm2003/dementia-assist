@@ -1,0 +1,1 @@
+AI powered companion system for people affected by dementia.

@@ -1,4 +1,8 @@
 from fastapi import FastAPI
+from .db import database
+from .models import models
+
+models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(
     title="Empathetic Family Recognition Aid API",

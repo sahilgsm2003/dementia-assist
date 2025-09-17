@@ -34,7 +34,7 @@ def generate_quiz_question(db: Session, user_id: int, num_options: int = 4):
 
     # 4. Prepare the response options
     options = [
-        schemas.QuizOption(member_id=member.id, name=member.name) for member in selected_members
+        schemas.QuizOption(id=member.id, name=member.name) for member in selected_members
     ]
     random.shuffle(options)  # So the correct answer isn't always in the same place
 
@@ -43,7 +43,7 @@ def generate_quiz_question(db: Session, user_id: int, num_options: int = 4):
 
     # 6. Return the formatted quiz question
     return schemas.QuizQuestion(
-        image_url=f"/static/{image_path}",
+        image_url=f"/uploads/{image_path}",
         options=options,
         prompted_family_member_id=correct_member.id,
     )

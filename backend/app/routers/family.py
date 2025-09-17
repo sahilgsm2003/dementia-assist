@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.schemas import schemas
@@ -36,6 +36,18 @@ def read_family_members(
     """
     members = family_service.get_family_members_by_user(db, user_id=current_user.id)
     return members
+
+
+@router.delete("/members/{member_id}")
+def delete_family_member(
+    member_id: int,
+    db: Session = Depends(auth_service.get_db),
+    current_user: schemas.User = Depends(auth_service.get_current_active_user),
+):
+    """
+    Delete a family member and all associated photos.
+    """
+    return family_service.delete_family_member(db=db, member_id=member_id, user_id=current_user.id)
 
 
 @router.post("/members/{member_id}/photos", response_model=schemas.Image)

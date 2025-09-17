@@ -1,14 +1,16 @@
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Shield, Users, Clock, Brain, Camera } from 'lucide-react';
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Heart, Shield, Users, Clock, Brain, Camera } from "lucide-react";
+import { Link } from "react-router-dom";
 
-interface LandingPageProps {
-  onNavigate: (page: string) => void;
-}
-
-const FeatureCard = ({ icon: Icon, title, description, delay }: {
+const FeatureCard = ({
+  icon: Icon,
+  title,
+  description,
+  delay,
+}: {
   icon: any;
   title: string;
   description: string;
@@ -37,12 +39,12 @@ const FeatureCard = ({ icon: Icon, title, description, delay }: {
   );
 };
 
-export const LandingPage = ({ onNavigate }: LandingPageProps) => {
+export const LandingPage = () => {
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
 
   const scrollToFeatures = () => {
-    featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
+    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const words = ["Rediscover", "Precious", "Moments"];
@@ -50,10 +52,13 @@ export const LandingPage = ({ onNavigate }: LandingPageProps) => {
   return (
     <div className="pt-20">
       {/* Hero Section */}
-      <section ref={heroRef} className="min-h-screen flex items-center justify-center px-6">
+      <section
+        ref={heroRef}
+        className="min-h-screen flex items-center justify-center px-6"
+      >
         <div className="max-w-4xl text-center space-y-8">
           <div className="space-y-4">
-            <motion.h1 
+            <motion.h1
               className="text-6xl md:text-8xl font-bold leading-tight"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -65,24 +70,25 @@ export const LandingPage = ({ onNavigate }: LandingPageProps) => {
                   className="inline-block mr-4"
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.8, 
+                  transition={{
+                    duration: 0.8,
                     delay: index * 0.3,
-                    ease: "easeOut"
+                    ease: "easeOut",
                   }}
                 >
                   {word}
                 </motion.span>
               ))}
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.2 }}
             >
-              Helping caregivers create meaningful connections through gentle family recognition exercises designed with love and understanding.
+              Helping caregivers create meaningful connections through gentle
+              family recognition exercises designed with love and understanding.
             </motion.p>
           </div>
 
@@ -113,11 +119,12 @@ export const LandingPage = ({ onNavigate }: LandingPageProps) => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Thoughtfully Designed for 
+              Thoughtfully Designed for
               <span className="text-[#E02478]"> Connection</span>
             </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Every feature is crafted with empathy and understanding to support both caregivers and their loved ones.
+              Every feature is crafted with empathy and understanding to support
+              both caregivers and their loved ones.
             </p>
           </motion.div>
 
@@ -167,13 +174,11 @@ export const LandingPage = ({ onNavigate }: LandingPageProps) => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <Button
-              size="lg"
-              onClick={() => onNavigate('register')}
-              className="text-lg px-12 py-6"
-            >
-              Start Your Journey
-            </Button>
+            <Link to="/register">
+              <Button size="lg" className="text-lg px-12 py-6">
+                Start Your Journey
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -189,9 +194,15 @@ export const LandingPage = ({ onNavigate }: LandingPageProps) => {
             Creating meaningful connections through technology and compassion.
           </p>
           <div className="flex justify-center space-x-6 text-sm text-white/50">
-            <button className="hover:text-[#E02478] transition-colors">Privacy Policy</button>
-            <button className="hover:text-[#E02478] transition-colors">Terms of Service</button>
-            <button className="hover:text-[#E02478] transition-colors">Support</button>
+            <button className="hover:text-[#E02478] transition-colors">
+              Privacy Policy
+            </button>
+            <button className="hover:text-[#E02478] transition-colors">
+              Terms of Service
+            </button>
+            <button className="hover:text-[#E02478] transition-colors">
+              Support
+            </button>
           </div>
         </div>
       </footer>

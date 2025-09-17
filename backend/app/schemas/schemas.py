@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 
 # Pydantic models for Image
@@ -14,6 +15,7 @@ class ImageCreate(ImageBase):
 class Image(ImageBase):
     id: int
     family_member_id: int
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -32,6 +34,7 @@ class FamilyMemberCreate(FamilyMemberBase):
 class FamilyMember(FamilyMemberBase):
     id: int
     user_id: int
+    created_at: datetime
     images: List[Image] = []
 
     class Config:
@@ -67,7 +70,7 @@ class TokenData(BaseModel):
 
 # Pydantic models for Quiz Logic
 class QuizOption(BaseModel):
-    member_id: int
+    id: int
     name: str
 
 

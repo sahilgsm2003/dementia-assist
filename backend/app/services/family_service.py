@@ -48,6 +48,29 @@ def create_family_member(db: Session, member: schemas.FamilyMemberCreate, user_i
     return db_member
 
 
+def delete_family_member(db: Session, member_id: int, user_id: int):
+    """
+    Deletes a family member and all associated photos.
+    """
+    # First, get the family member to ensure it exists and belongs to the user
+    member = get_family_member(db, member_id, user_id)
+    
+    # Delete associated image files from filesystem
+    for image in member.images:
+        image_path = UPLOADS_DIR / image.file_path
+        if image_path.exists():
+            try:
+                os.remove(image_path)
+            except OSError:
+                pass  # Continue even if file deletion fails
+    
+    # Delete the family member (this will cascade delete images due to the relationship)
+    db.delete(member)
+    db.commit()
+    
+    return {"message": "Family member deleted successfully"}
+
+
 async def save_photo_for_member(
     db: Session, user_id: int, member_id: int, file: UploadFile = File(...)
 ):

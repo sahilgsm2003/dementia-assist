@@ -3,7 +3,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from deepface import DeepFace
+# from deepface import DeepFace  # Temporarily commented out
 from fastapi import File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
@@ -78,25 +78,27 @@ async def save_photo_for_member(
         with temp_file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # 6. AI Validation: Check if a face exists in the photo
-        try:
-            # The backend='mtcnn' is often good at finding faces in varied conditions
-            DeepFace.extract_faces(
-                img_path=str(temp_file_path),
-                enforce_detection=True,
-                detector_backend="mtcnn",
-            )
-        except ValueError as e:
-            # This exception is thrown by DeepFace if no face is detected
-            os.remove(temp_file_path)  # Clean up the invalid file
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No face detected in the uploaded image. Please use a clearer photo. Error: {e}",
-            )
+        # # 6. AI Validation: Temporarily disabled.
+        # # This block will be re-enabled later to ensure a face is in the photo.
+        # try:
+        #     extracted_faces = DeepFace.extract_faces(
+        #         img_path=str(temp_file_path),
+        #         enforce_detection=False,
+        #         detector_backend="mtcnn",
+        #     )
+        #     if not extracted_faces:
+        #         raise ValueError("No face detected in the uploaded image.")
+        # except Exception as e:
+        #     os.remove(temp_file_path)
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail=f"Image validation failed: {e}",
+        #     )
 
         # 7. Database Update
+        # The file_path should be stored as a Unix-style path for consistency
         db_image = models.Image(
-            family_member_id=member.id, file_path=str(temp_file_path.relative_to(UPLOADS_DIR))
+            family_member_id=member.id, file_path=str(temp_file_path.relative_to(UPLOADS_DIR)).replace("\\", "/")
         )
         db.add(db_image)
         db.commit()

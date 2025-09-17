@@ -5,3 +5,4 @@ __pycache__/
 *.sqlite
 issues.md
 uploads/
+backend/app/core/config.py

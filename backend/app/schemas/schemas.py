@@ -63,3 +63,21 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+# Pydantic models for Quiz Logic
+class QuizOption(BaseModel):
+    member_id: int
+    name: str
+
+
+class QuizQuestion(BaseModel):
+    image_url: str
+    options: List[QuizOption]
+    prompted_family_member_id: int
+
+
+class QuizAnswer(BaseModel):
+    prompted_family_member_id: int
+    selected_family_member_id: int
+    response_time_ms: Optional[int] = None

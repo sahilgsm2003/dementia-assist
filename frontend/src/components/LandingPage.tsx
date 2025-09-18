@@ -156,7 +156,7 @@ export const LandingPage = () => {
                     recognize and remember family members through gentle,
                     supportive activities.
                   </p>
-                  <Link to="/register">
+                  <Link to="/register" className="mt-6 block">
                     <Button size="lg" className="w-full">
                       Try Recognition Quiz
                     </Button>
@@ -186,8 +186,8 @@ export const LandingPage = () => {
                     using your stored information. Get help with schedules,
                     dates, and important details.
                   </p>
-                  <Link to="/register">
-                    <Button size="lg" className="w-full" variant="outline">
+                  <Link to="/register" className="mt-6 block">
+                    <Button size="lg" className="w-full">
                       Learn More
                     </Button>
                   </Link>
@@ -260,14 +260,9 @@ export const LandingPage = () => {
             <Heart className="h-6 w-6 text-[#E02478]" />
             <span className="text-xl font-bold">Moments</span>
           </div>
-          <p className="text-white/60 mb-4">
+          <p className="text-white/60">
             Creating meaningful connections through technology and compassion.
           </p>
-          <div className="flex justify-center space-x-6 text-sm text-white/50">
-            <button className="hover:text-[#E02478] transition-colors">
-              Support
-            </button>
-          </div>
         </div>
       </footer>
     </div>

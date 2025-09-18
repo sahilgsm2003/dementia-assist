@@ -5,6 +5,7 @@ psycopg2-binary
 pydantic
 pydantic-settings
 python-multipart
+python-dotenv
 passlib[bcrypt]
 bcrypt==3.2.2
 python-jose[cryptography]

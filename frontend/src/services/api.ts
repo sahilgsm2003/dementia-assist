@@ -120,6 +120,70 @@ export const quizAPI = {
     });
     return response.data;
   },
+
+  // Simple Document MCQ API functions
+  getDocumentMCQ: async (questionType?: string) => {
+    const params = questionType ? { question_type: questionType } : {};
+    const response = await api.get("/quiz/document-mcq", { params });
+    return response.data;
+  },
+
+  submitDocumentMCQAnswer: async (
+    questionId: string,
+    userAnswer: string,
+    questionData: object
+  ) => {
+    const response = await api.post("/quiz/document-mcq/answer", {
+      question_id: questionId,
+      user_answer: userAnswer,
+      question_data: questionData,
+    });
+    return response.data;
+  },
+
+  // Enhanced Session-Based Quiz API functions
+  setupQuizSession: async (setupData: {
+    session_name?: string;
+    total_questions: number;
+    question_timer: number;
+  }) => {
+    const response = await api.post("/quiz/document-quiz/setup", setupData);
+    return response.data;
+  },
+
+  getSessionQuestion: async (sessionId: number, questionNumber: number) => {
+    const response = await api.get(
+      `/quiz/document-quiz/session/${sessionId}/question/${questionNumber}`
+    );
+    return response.data;
+  },
+
+  submitSessionAnswer: async (
+    sessionId: number,
+    answerData: {
+      question_id: number;
+      user_answer: string;
+      response_time: number;
+    }
+  ) => {
+    const response = await api.post(
+      `/quiz/document-quiz/session/${sessionId}/answer`,
+      answerData
+    );
+    return response.data;
+  },
+
+  completeQuizSession: async (sessionId: number) => {
+    const response = await api.post(
+      `/quiz/document-quiz/session/${sessionId}/complete`
+    );
+    return response.data;
+  },
+
+  getQuizHistory: async () => {
+    const response = await api.get("/quiz/document-quiz/history");
+    return response.data;
+  },
 };
 
 // Chat/RAG API functions

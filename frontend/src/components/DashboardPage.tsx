@@ -13,6 +13,8 @@ import {
   Camera,
   Brain,
   MessageCircle,
+  BookOpen,
+  History,
 } from "lucide-react";
 import { familyAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
@@ -167,6 +169,14 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleStartDocumentQuiz = () => {
+    navigate("/document-quiz");
+  };
+
+  const handleViewQuizHistory = () => {
+    navigate("/quiz-history");
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -213,8 +223,8 @@ export const DashboardPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Family Recognition Feature */}
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Basic Family Recognition Quiz */}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -223,15 +233,14 @@ export const DashboardPage = () => {
                 >
                   <Card className="p-6 h-full hover:shadow-[#E02478]/30 transition-all duration-300 border-2 hover:border-[#E02478]/50">
                     <CardContent className="text-center space-y-4">
-                      <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
-                        <Brain className="h-8 w-8 text-[#E02478]" />
+                      <div className="mx-auto w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                        <Brain className="h-8 w-8 text-blue-400" />
                       </div>
                       <h3 className="text-xl font-semibold">
-                        Family Recognition Quiz
+                        Basic Recognition Quiz
                       </h3>
                       <p className="text-white/70 text-sm leading-relaxed">
-                        Practice identifying family members through interactive
-                        photo exercises
+                        Simple photo identification exercises for family members
                       </p>
                       <Button
                         size="lg"
@@ -250,6 +259,63 @@ export const DashboardPage = () => {
                   </Card>
                 </motion.div>
 
+                {/* Document-Based Quiz */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group cursor-pointer"
+                  onClick={handleStartDocumentQuiz}
+                >
+                  <Card className="p-6 h-full hover:shadow-orange-500/30 transition-all duration-300 border-2 hover:border-orange-500/50">
+                    <CardContent className="text-center space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30 transition-colors">
+                        <BookOpen className="h-8 w-8 text-orange-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold">
+                        Document Quiz (AI)
+                      </h3>
+                      <p className="text-white/70 text-sm leading-relaxed">
+                        Smart questions generated from your documents using
+                        Gemini AI
+                      </p>
+                      <Button
+                        size="lg"
+                        className="w-full bg-orange-600 hover:bg-orange-700"
+                      >
+                        <BookOpen className="mr-2 h-5 w-5" />
+                        Start Document Quiz
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Quiz History */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group cursor-pointer"
+                  onClick={handleViewQuizHistory}
+                >
+                  <Card className="p-6 h-full hover:shadow-blue-500/30 transition-all duration-300 border-2 hover:border-blue-500/50">
+                    <CardContent className="text-center space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                        <History className="h-8 w-8 text-blue-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold">Quiz History</h3>
+                      <p className="text-white/70 text-sm leading-relaxed">
+                        View past quiz sessions and AI-powered progress insights
+                      </p>
+                      <Button
+                        size="lg"
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        <History className="mr-2 h-5 w-5" />
+                        View History
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
                 {/* RAG Chatbot Feature */}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
@@ -257,10 +323,10 @@ export const DashboardPage = () => {
                   className="group cursor-pointer"
                   onClick={() => navigate("/chatbot")}
                 >
-                  <Card className="p-6 h-full hover:shadow-[#E02478]/30 transition-all duration-300 border-2 hover:border-[#E02478]/50">
+                  <Card className="p-6 h-full hover:shadow-purple-500/30 transition-all duration-300 border-2 hover:border-purple-500/50">
                     <CardContent className="text-center space-y-4">
-                      <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
-                        <MessageCircle className="h-8 w-8 text-[#E02478]" />
+                      <div className="mx-auto w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
+                        <MessageCircle className="h-8 w-8 text-purple-400" />
                       </div>
                       <h3 className="text-xl font-semibold">
                         Personal Life Assistant
@@ -269,7 +335,10 @@ export const DashboardPage = () => {
                         Get AI-powered answers to your personal questions and
                         important dates
                       </p>
-                      <Button size="lg" className="w-full">
+                      <Button
+                        size="lg"
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                      >
                         <MessageCircle className="mr-2 h-5 w-5" />
                         Open Assistant
                       </Button>
@@ -326,7 +395,7 @@ export const DashboardPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <Button
                       size="lg"
                       onClick={handleStartQuiz}
@@ -334,7 +403,33 @@ export const DashboardPage = () => {
                       className="flex-1"
                     >
                       <PlayCircle className="mr-2 h-5 w-5" />
-                      Start Recognition Quiz
+                      Basic Quiz
+                    </Button>
+                    <Button
+                      size="lg"
+                      onClick={handleStartDocumentQuiz}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    >
+                      <BookOpen className="mr-2 h-5 w-5" />
+                      Doc Quiz
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => navigate("/chatbot")}
+                      className="flex-1"
+                    >
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      Assistant
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleViewQuizHistory}
+                      className="flex-1"
+                    >
+                      <History className="mr-2 h-5 w-5" />
+                      History
                     </Button>
                     <Button
                       variant="outline"
@@ -343,7 +438,7 @@ export const DashboardPage = () => {
                       className="flex-1"
                     >
                       <Plus className="mr-2 h-5 w-5" />
-                      Add Family Member
+                      Add Member
                     </Button>
                   </div>
                 </CardContent>

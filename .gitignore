@@ -9,3 +9,5 @@ backend/app/core/config.py
 node_modules/
 project-bolt-sb1-hzumdfaa/
 frontend-doc.md
+rag.md
+todo.md

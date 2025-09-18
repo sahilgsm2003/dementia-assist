@@ -4,7 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, User, PlayCircle, Trash2, Upload, Camera } from "lucide-react";
+import {
+  Plus,
+  User,
+  PlayCircle,
+  Trash2,
+  Upload,
+  Camera,
+  Brain,
+  MessageCircle,
+} from "lucide-react";
 import { familyAPI } from "@/services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -188,6 +197,91 @@ export const DashboardPage = () => {
           <p className="text-xl text-white/70">
             Manage family members and create meaningful recognition experiences
           </p>
+        </motion.div>
+
+        {/* Feature Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-12"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center text-2xl mb-4">
+                Choose Your Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Family Recognition Feature */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group cursor-pointer"
+                  onClick={handleStartQuiz}
+                >
+                  <Card className="p-6 h-full hover:shadow-[#E02478]/30 transition-all duration-300 border-2 hover:border-[#E02478]/50">
+                    <CardContent className="text-center space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
+                        <Brain className="h-8 w-8 text-[#E02478]" />
+                      </div>
+                      <h3 className="text-xl font-semibold">
+                        Family Recognition Quiz
+                      </h3>
+                      <p className="text-white/70 text-sm leading-relaxed">
+                        Practice identifying family members through interactive
+                        photo exercises
+                      </p>
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        disabled={familyMembers.length === 0}
+                      >
+                        <PlayCircle className="mr-2 h-5 w-5" />
+                        Start Quiz
+                      </Button>
+                      {familyMembers.length === 0 && (
+                        <p className="text-yellow-400 text-xs">
+                          Add family members first to start the quiz
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* RAG Chatbot Feature */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group cursor-pointer"
+                  onClick={() => navigate("/chatbot")}
+                >
+                  <Card className="p-6 h-full hover:shadow-[#E02478]/30 transition-all duration-300 border-2 hover:border-[#E02478]/50">
+                    <CardContent className="text-center space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
+                        <MessageCircle className="h-8 w-8 text-[#E02478]" />
+                      </div>
+                      <h3 className="text-xl font-semibold">
+                        Personal Life Assistant
+                      </h3>
+                      <p className="text-white/70 text-sm leading-relaxed">
+                        Get AI-powered answers to your personal questions and
+                        important dates
+                      </p>
+                      <Button size="lg" className="w-full" variant="outline">
+                        <MessageCircle className="mr-2 h-5 w-5" />
+                        Open Assistant
+                      </Button>
+                      <p className="text-orange-400 text-xs">
+                        Coming Soon - Under Development
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Loading State */}

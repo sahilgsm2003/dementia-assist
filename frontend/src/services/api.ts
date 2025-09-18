@@ -122,4 +122,55 @@ export const quizAPI = {
   },
 };
 
+// Chat/RAG API functions
+export const chatAPI = {
+  sendQuestion: async (question: string) => {
+    const response = await api.post("/rag/chat/query", { question });
+    return response;
+  },
+
+  getChatHistory: async (limit?: number) => {
+    const params = limit ? { limit } : {};
+    const response = await api.get("/rag/chat/history", { params });
+    return response;
+  },
+
+  uploadDocument: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post("/rag/documents/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  },
+
+  getDocuments: async () => {
+    const response = await api.get("/rag/documents/");
+    return response;
+  },
+
+  deleteDocument: async (documentId: number) => {
+    const response = await api.delete(`/rag/documents/${documentId}`);
+    return response;
+  },
+
+  getKnowledgeBaseStats: async () => {
+    const response = await api.get("/rag/knowledge-base/stats");
+    return response;
+  },
+
+  resetKnowledgeBase: async () => {
+    const response = await api.delete("/rag/knowledge-base/reset");
+    return response;
+  },
+
+  initializeDemo: async () => {
+    const response = await api.post("/rag/initialize-demo");
+    return response;
+  },
+};
+
 export default api;

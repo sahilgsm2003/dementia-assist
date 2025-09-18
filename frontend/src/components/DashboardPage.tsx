@@ -269,13 +269,10 @@ export const DashboardPage = () => {
                         Get AI-powered answers to your personal questions and
                         important dates
                       </p>
-                      <Button size="lg" className="w-full" variant="outline">
+                      <Button size="lg" className="w-full">
                         <MessageCircle className="mr-2 h-5 w-5" />
                         Open Assistant
                       </Button>
-                      <p className="text-orange-400 text-xs">
-                        Coming Soon - Under Development
-                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>

@@ -11,7 +11,7 @@ import { LandingPage } from "./components/LandingPage";
 import { AuthPage } from "./components/AuthPage";
 import { DashboardPage } from "./components/DashboardPage";
 import { FamilyMemberQuiz } from "./components/FamilyMemberQuiz";
-import { RAGChatbot } from "./components/RAGChatbot";
+import ChatPage from "./components/ChatPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -46,7 +46,7 @@ function App() {
               path="/chatbot"
               element={
                 <ProtectedRoute>
-                  <RAGChatbot />
+                  <ChatPage />
                 </ProtectedRoute>
               }
             />

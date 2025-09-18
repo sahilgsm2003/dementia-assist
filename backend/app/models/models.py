@@ -5,6 +5,9 @@ from sqlalchemy import (
     Integer,
     String,
     DateTime,
+    Text,
+    JSON,
+    Float,
     func,
 )
 from sqlalchemy.orm import relationship
@@ -64,3 +67,29 @@ class QuizSession(Base):
     user = relationship("User", back_populates="quiz_sessions")
     prompted_family_member = relationship("FamilyMember", foreign_keys=[prompted_family_member_id])
     selected_family_member = relationship("FamilyMember", foreign_keys=[selected_family_member_id])
+
+
+class Document(Base):
+    __tablename__ = "documents"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    content = Column(Text)
+    document_metadata = Column(JSON)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    question = Column(Text, nullable=False)
+    response = Column(Text, nullable=False)
+    confidence_score = Column(Float)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

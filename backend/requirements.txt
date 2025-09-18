@@ -10,3 +10,7 @@ bcrypt==3.2.2
 python-jose[cryptography]
 deepface
 tf-keras
+google-generativeai
+faiss-cpu
+pypdf2
+numpy

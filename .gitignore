@@ -11,3 +11,5 @@ project-bolt-sb1-hzumdfaa/
 frontend-doc.md
 rag.md
 todo.md
+.env
+faiss_indexes/

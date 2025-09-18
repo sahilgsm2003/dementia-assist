@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from .db import database
 from .models import models
-from .routers import auth, family, quiz
+from .routers import auth, family, quiz, rag
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -31,6 +31,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 app.include_router(auth.router)
 app.include_router(family.router)
 app.include_router(quiz.router)
+app.include_router(rag.router)
 
 
 @app.get("/")

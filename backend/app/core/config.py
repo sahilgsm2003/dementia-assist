@@ -17,8 +17,7 @@ class Settings(BaseSettings):
     FAISS_INDEX_PATH: str = "./faiss_indexes"
     CHUNK_SIZE: int = 1000
     MAX_CONTEXT_LENGTH: int = 3000
-    SIMILARITY_THRESHOLD: float = 0.3
-    MIN_CONTEXT_RESULTS: int = 1
+    SIMILARITY_THRESHOLD: float = 0.7
 
     class Config:
         env_file = ".env"

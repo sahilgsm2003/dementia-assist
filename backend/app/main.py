@@ -10,7 +10,7 @@ load_dotenv()
 
 from .db import database
 from .models import models
-from .routers import auth, family, quiz, rag
+from .routers import auth, rag
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -30,13 +30,10 @@ app.add_middleware(
 )
 
 # Mount the 'uploads' directory so that images can be served statically
-# Use the same path resolution as in family_service.py
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 app.include_router(auth.router)
-app.include_router(family.router)
-app.include_router(quiz.router)
 app.include_router(rag.router)
 
 

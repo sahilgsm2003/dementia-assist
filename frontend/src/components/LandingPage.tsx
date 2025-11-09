@@ -1,273 +1,224 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Heart,
-  Clock,
   Brain,
-  Upload,
+  Clock,
+  Heart,
   MessageCircle,
   Sparkles,
+  Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  description,
-  delay,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  delay: number;
-}) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+const featureItems = [
+  {
+    icon: Brain,
+    title: "Personal assistant",
+    description:
+      "A calm, conversational guide that recalls the names, places, and routines that matter most.",
+  },
+  {
+    icon: Upload,
+    title: "Document memory bank",
+    description:
+      "Upload caregiver notes, diaries, or schedules. Moments organises every detail for quick recall.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Gentle conversation",
+    description:
+      "Simple prompts, warm responses, and speech support keep every interaction approachable.",
+  },
+];
 
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-      transition={{ duration: 0.6, delay, ease: "easeOut" }}
-    >
-      <Card className="p-6 h-full hover:scale-105 hover:shadow-[#E02478]/30 cursor-pointer group">
-        <CardContent className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
-            <Icon className="h-8 w-8 text-[#E02478]" />
-          </div>
-          <h3 className="text-xl font-semibold">{title}</h3>
-          <p className="text-white/70 leading-relaxed">{description}</p>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+const supportHighlights = [
+  {
+    icon: Heart,
+    title: "Care-first design",
+    description:
+      "Language tuned for dementia care—reassuring, clear, and kind.",
+  },
+  {
+    icon: Clock,
+    title: "Always on time",
+    description:
+      "Surface birthdays, appointments, and routines without digging through notes.",
+  },
+  {
+    icon: Sparkles,
+    title: "Five-minute setup",
+    description: "Sign in, upload a PDF, and start chatting in moments.",
+  },
+];
 
 export const LandingPage = () => {
-  const heroRef = useRef<HTMLElement>(null);
-  const featuresRef = useRef<HTMLElement>(null);
-
-  const scrollToFeatures = () => {
-    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const words = ["Rediscover", "Precious", "Moments"];
-
   return (
-    <div className="pt-16">
-      {/* Hero Section */}
-      <section
-        ref={heroRef}
-        className="min-h-screen flex items-center justify-center px-6 py-12"
-      >
-        <div className="max-w-5xl text-center space-y-12">
-          <div className="space-y-8">
-            <motion.h1
-              className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            >
-              {words.map((word, index) => (
-                <motion.span
-                  key={word}
-                  className="inline-block mr-4"
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.8,
-                    delay: index * 0.3,
-                    ease: "easeOut",
-                  }}
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </motion.h1>
-
-            <motion.p
-              className="text-xl md:text-2xl lg:text-3xl text-white/80 max-w-4xl mx-auto leading-relaxed font-light"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-            >
-              A gentle memory companion that answers personal questions with
-              warmth, keeps important details organised, and helps caregivers
-              build a living library of cherished moments.
-            </motion.p>
+    <div className="space-y-24">
+      <section className="container mx-auto px-6 pt-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mx-auto max-w-4xl text-center space-y-10"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-sm font-medium text-white/70 ring-1 ring-white/10 backdrop-blur">
+            <Heart className="h-4 w-4 text-[#E02478]" />
+            Gentle care companion
+          </span>
+          <div className="space-y-6">
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white md:text-6xl">
+              Help loved ones remember the moments that matter.
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg text-white/70 md:text-xl">
+              Moments keeps personal memories close at hand—combining your own
+              notes with an empathetic assistant designed for dementia care.
+            </p>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 1.6 }}
-          >
-            <Button
-              size="lg"
-              className="text-lg px-16 py-8 hover:scale-105 transition-all duration-300 shadow-lg"
-              onClick={scrollToFeatures}
-            >
-              Get Started
-            </Button>
-          </motion.div>
-        </div>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link to="/register">
+              <Button size="lg" className="h-12 rounded-full px-8">
+                Start for free
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-white/20 bg-white/10 px-8 text-white hover:bg-white/20"
+              >
+                Sign in
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
       </section>
 
-      {/* Core Features Showcase */}
-      <section className="py-24 px-6 bg-white/5">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              How Moments Helps
-            </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Everything revolves around your Personal Life Assistant—powered by
-              your documents, memories, and supportive conversations.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-12">
+      <section className="container mx-auto px-6">
+        <motion.div
+          className="grid gap-6 md:grid-cols-3"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.15 } },
+          }}
+        >
+          {featureItems.map((feature) => (
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="group"
+              key={feature.title}
+              variants={{
+                hidden: { opacity: 0, y: 24 },
+                show: { opacity: 1, y: 0 },
+              }}
             >
-              <Card className="p-8 h-full hover:scale-105 hover:shadow-[#E02478]/30 transition-all duration-300">
-                <CardContent className="text-center space-y-6">
-                  <div className="mx-auto w-20 h-20 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
-                    <Brain className="h-10 w-10 text-[#E02478]" />
+              <Card className="h-full border-white/10 bg-white/5 backdrop-blur">
+                <CardContent className="space-y-4 p-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]">
+                    <feature.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-2xl font-bold">
-                    Personal Life Assistant
+                  <h3 className="text-lg font-semibold text-white">
+                    {feature.title}
                   </h3>
-                  <p className="text-white/70 leading-relaxed">
-                    Chat with an AI that understands your loved one's story.
-                    Share questions, get warm reminders, and surface details
-                    that make every conversation easier.
+                  <p className="text-sm leading-relaxed text-white/70">
+                    {feature.description}
                   </p>
-                  <Link to="/register" className="mt-6 block">
-                    <Button size="lg" className="w-full">
-                      Start Chatting
-                    </Button>
-                  </Link>
                 </CardContent>
               </Card>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="group"
-            >
-              <Card className="p-8 h-full hover:scale-105 hover:shadow-[#E02478]/30 transition-all duration-300">
-                <CardContent className="text-center space-y-6">
-                  <div className="mx-auto w-20 h-20 bg-[#E02478]/20 rounded-full flex items-center justify-center group-hover:bg-[#E02478]/30 transition-colors">
-                    <Upload className="h-10 w-10 text-[#E02478]" />
-                  </div>
-                  <h3 className="text-2xl font-bold">Document Memory Bank</h3>
-                  <p className="text-white/70 leading-relaxed">
-                    Securely upload diaries, schedules, and notes. Moments
-                    curates the important people, dates, and events so answers
-                    feel personal and dependable.
-                  </p>
-                  <Link to="/register" className="mt-6 block">
-                    <Button size="lg" className="w-full">
-                      Build Your Library
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-        </div>
+          ))}
+        </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section ref={featuresRef} className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="container mx-auto px-6">
+        <div className="mx-auto max-w-5xl space-y-12 text-center">
           <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-4"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Thoughtfully Designed for
-              <span className="text-[#E02478]"> Connection</span>
+            <h2 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Built to support thoughtful caregiving
             </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Simple tools that keep families in sync, reduce stress, and
-              celebrate memories with compassion.
+            <p className="text-base text-white/70 md:text-lg">
+              Every interaction is crafted to feel calm, clear, and
+              effortless—for you and the person you care for.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={Heart}
-              title="Compassionate Support"
-              description="Warm, reassuring responses tuned for dementia care and supportive caregiving conversations."
-              delay={0.1}
-            />
-            <FeatureCard
-              icon={Upload}
-              title="Centralised Memories"
-              description="Upload diaries, medical notes, and schedules to keep everything your assistant needs in one place."
-              delay={0.2}
-            />
-            <FeatureCard
-              icon={Brain}
-              title="Smart Recall"
-              description="Moments learns from every document to surface names, events, and routines exactly when you need them."
-              delay={0.3}
-            />
-            <FeatureCard
-              icon={MessageCircle}
-              title="Ongoing Conversations"
-              description="Review past chats to spot patterns, celebrate progress, and keep everyone informed."
-              delay={0.4}
-            />
-            <FeatureCard
-              icon={Clock}
-              title="Timely Reminders"
-              description="Capture upcoming visits, appointments, and celebrations so nothing meaningful slips through the cracks."
-              delay={0.5}
-            />
-            <FeatureCard
-              icon={Sparkles}
-              title="Set Up in Minutes"
-              description="Upload a document or start chatting right away—no complex configuration required."
-              delay={0.6}
-            />
-          </div>
+          <motion.div
+            className="grid gap-6 md:grid-cols-3"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.15 } },
+            }}
+          >
+            {supportHighlights.map((item) => (
+              <motion.div
+                key={item.title}
+                variants={{
+                  hidden: { opacity: 0, y: 24 },
+                  show: { opacity: 1, y: 0 },
+                }}
+              >
+                <Card className="h-full border-white/10 bg-black/40 backdrop-blur">
+                  <CardContent className="space-y-4 p-6 text-left">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70">
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-white/60">
+                      {item.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-white/10">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <Heart className="h-6 w-6 text-[#E02478]" />
-            <span className="text-xl font-bold">Moments</span>
-          </div>
-          <p className="text-white/60">
-            Creating meaningful connections through technology and compassion.
+      <section className="container mx-auto px-6 pb-16">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-gradient-to-br from-[#E02478]/15 via-purple-600/10 to-transparent p-10 text-center shadow-xl backdrop-blur"
+        >
+          <h3 className="text-2xl font-semibold text-white md:text-3xl">
+            Ready to create calmer, more connected days?
+          </h3>
+          <p className="mt-4 text-base text-white/70 md:text-lg">
+            Join caregivers using Moments to keep every important detail within
+            reach.
           </p>
-        </div>
-      </footer>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link to="/register">
+              <Button size="lg" className="h-12 rounded-full px-8">
+                Create your account
+              </Button>
+            </Link>
+            <Link to="/chatbot">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-white/20 bg-white/10 px-8 text-white hover:bg-white/20"
+              >
+                See the assistant
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
     </div>
   );
 };

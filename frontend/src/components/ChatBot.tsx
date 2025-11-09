@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ChatMessage {
   id: string;
@@ -574,10 +575,10 @@ const ChatBot: React.FC<ChatBotProps> = ({
 
   return (
     <div
-      className={`flex flex-col h-full bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 ${className}`}
+      className={`flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur ${className}`}
     >
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-[#E02478]/20 to-purple-600/20">
+      <div className="flex items-center justify-between rounded-t-2xl border-b border-white/10 bg-gradient-to-r from-[#E02478]/20 to-purple-500/20 p-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-[#E02478]/20 rounded-full backdrop-blur-sm">
             <Bot className="w-5 h-5 text-[#E02478]" />
@@ -592,7 +593,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-transparent to-black/20">
+      <div className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-transparent to-black/10 p-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -777,18 +778,18 @@ const ChatBot: React.FC<ChatBotProps> = ({
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-white/10 bg-black/20 backdrop-blur-sm">
+      <div className="rounded-b-2xl border-t border-white/10 bg-black/30 p-4 backdrop-blur">
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <textarea
+            <Textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me anything about your life..."
-              className="w-full p-3 pr-12 border border-white/20 bg-black/20 backdrop-blur-sm rounded-lg resize-none focus:ring-2 focus:ring-[#E02478] focus:border-transparent text-white placeholder-white/50"
+              className="min-h-[52px] resize-none bg-black/30 pr-12 text-sm text-white placeholder:text-white/45"
               rows={1}
               disabled={isLoading || isListening}
-              style={{ minHeight: "44px", maxHeight: "120px" }}
+              style={{ maxHeight: "120px" }}
             />
             {isListening && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">

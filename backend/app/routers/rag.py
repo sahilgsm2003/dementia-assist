@@ -7,12 +7,11 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.models import User, Document
 from app.schemas.schemas import (
-    ChatQuery, 
-    ChatResponse, 
-    DocumentInfo, 
+    ChatQuery,
+    ChatResponse,
+    DocumentInfo,
     DocumentUploadResponse,
     ChatHistory,
-    KnowledgeBaseStats
 )
 from app.services.auth_service import get_current_user
 from app.services.rag_service import RAGService
@@ -206,26 +205,6 @@ async def delete_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting document: {str(e)}"
         )
-
-
-@router.get("/knowledge-base/stats", response_model=KnowledgeBaseStats)
-async def get_knowledge_base_stats(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get statistics about the user's knowledge base.
-    """
-    try:
-        stats = rag_service.get_user_knowledge_stats(current_user.id, db)
-        return KnowledgeBaseStats(**stats)
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving knowledge base stats: {str(e)}"
-        )
-
 
 @router.delete("/knowledge-base/reset")
 async def reset_knowledge_base(

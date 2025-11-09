@@ -278,25 +278,3 @@ class VectorService:
             
         except Exception as e:
             print(f"Error deleting vector data for user {user_id}: {e}")
-
-
-    def get_index_stats(self, user_id: int) -> Dict[str, Any]:
-        """
-        Get statistics about a user's index.
-        """
-        try:
-            index = self.load_user_index(user_id)
-            metadata = self.load_user_metadata(user_id)
-            
-            if index is None:
-                return {"total_vectors": 0, "total_documents": 0}
-            
-            return {
-                "total_vectors": index.ntotal,
-                "total_documents": len(set(m.get('metadata', {}).get('filename', '') for m in metadata)),
-                "dimension": index.d
-            }
-            
-        except Exception as e:
-            print(f"Error getting index stats for user {user_id}: {e}")
-            return {"total_vectors": 0, "total_documents": 0}

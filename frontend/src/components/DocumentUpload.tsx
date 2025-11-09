@@ -114,37 +114,45 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Upload Area */}
-      <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Upload Documents
-        </h3>
+    <div className={`space-y-8 ${className}`}>
+      <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Upload a document</h3>
+            <p className="text-sm text-white/60">
+              Add diaries, notes, or care plans so the assistant can respond with personal context.
+            </p>
+          </div>
+          <button
+            onClick={onInitializeDemo}
+            disabled={isUploading}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Upload className="h-4 w-4" />
+            Load demo library
+          </button>
+        </div>
 
-        {/* Status Message */}
         {uploadStatus !== "idle" && (
           <div
-            className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
+            className={`mt-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
               uploadStatus === "success"
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-red-50 text-red-700 border border-red-200"
+                ? "border-green-400/40 bg-green-500/10 text-green-100"
+                : "border-red-400/40 bg-red-500/10 text-red-100"
             }`}
           >
             {uploadStatus === "success" ? (
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="h-4 w-4" />
             ) : (
-              <AlertCircle className="w-4 h-4" />
+              <AlertCircle className="h-4 w-4" />
             )}
-            <span className="text-sm">{uploadMessage}</span>
+            <span>{uploadMessage}</span>
           </div>
         )}
 
-        {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            dragOver
-              ? "border-[#E02478] bg-[#E02478]/10"
-              : "border-white/30 hover:border-white/50"
+          className={`mt-6 rounded-2xl border border-dashed border-white/20 bg-black/20 p-8 text-center transition ${
+            dragOver ? "border-[#E02478] bg-[#E02478]/10" : ""
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -157,98 +165,78 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             onChange={handleFileSelect}
             className="hidden"
           />
-
-          <Upload
-            className={`w-12 h-12 mx-auto mb-4 ${
-              dragOver ? "text-[#E02478]" : "text-white/60"
-            }`}
-          />
-
-          <h4 className="text-lg font-medium text-white mb-2">
-            Drop your PDF files here
-          </h4>
-          <p className="text-white/70 mb-4">or click to browse your files</p>
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="px-4 py-2 bg-[#E02478] text-white rounded-lg hover:bg-[#E02478]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-[#E02478]/30"
-          >
-            {isUploading ? "Uploading..." : "Choose File"}
-          </button>
-
-          <p className="text-xs text-white/50 mt-2">
-            Supported formats: PDF (max 10MB)
-          </p>
-        </div>
-
-        {/* Demo Data Button */}
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <button
-            onClick={onInitializeDemo}
-            disabled={isUploading}
-            className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
-          >
-            Load Demo Documents (John Miller's Diary)
-          </button>
-          <p className="text-xs text-white/50 mt-1 text-center">
-            This will load sample caretaker diary documents for testing
-          </p>
+          <div className="flex flex-col items-center gap-3 text-white/70">
+            <Upload className="h-10 w-10 text-[#E02478]" />
+            <div>
+              <p className="text-sm font-medium text-white">
+                Drop a PDF here, or{" "}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="underline decoration-[#E02478] decoration-2 underline-offset-4 transition hover:text-white disabled:cursor-not-allowed"
+                >
+                  browse your files
+                </button>
+              </p>
+              <p className="text-xs text-white/50">
+                Supports PDF files up to 10MB. Each upload replaces existing context.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Documents List */}
-      <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10">
-        <div className="p-4 border-b border-white/10">
-          <h4 className="font-semibold text-white">Your Documents</h4>
-          <p className="text-sm text-white/70">
-            {documents.length} document{documents.length !== 1 ? "s" : ""}{" "}
-            uploaded
-          </p>
+      <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <div>
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-white/70">
+              Library
+            </h4>
+            <p className="text-sm text-white/60">
+              {documents.length} document{documents.length === 1 ? "" : "s"} available
+            </p>
+          </div>
         </div>
 
         {documents.length === 0 ? (
-          <div className="p-8 text-center text-white/60">
-            <FileText className="w-12 h-12 mx-auto mb-4 text-white/30" />
-            <p>No documents uploaded yet</p>
+          <div className="flex flex-col items-center gap-3 px-6 py-12 text-center text-white/60">
+            <FileText className="h-10 w-10 text-white/30" />
             <p className="text-sm">
-              Upload PDFs to start building your knowledge base
+              No documents yet. Upload a PDF to give the assistant personal context to work with.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-white/10">
+          <ul className="divide-y divide-white/10">
             {documents.map((doc) => (
-              <div
+              <li
                 key={doc.id}
-                className="p-4 hover:bg-white/5 transition-colors"
+                className="flex items-start justify-between gap-4 px-6 py-4 transition hover:bg-white/5"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <FileText className="w-5 h-5 text-[#E02478] mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-medium text-white truncate">
-                        {doc.filename}
-                      </h5>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-white/60">
-                        <span>Uploaded {formatDate(doc.created_at)}</span>
-                        {doc.chunks_count && (
-                          <span>{doc.chunks_count} text chunks</span>
-                        )}
-                      </div>
-                    </div>
+                <div className="flex items-start gap-3 text-left">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]">
+                    <FileText className="h-5 w-5" />
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-white">{doc.filename}</p>
+                    <p className="text-xs uppercase tracking-wide text-white/40">
+                      Uploaded {formatDate(doc.created_at)}
+                    </p>
+                    {doc.chunks_count ? (
+                      <p className="text-xs text-white/40">{doc.chunks_count} extracted sections</p>
+                    ) : null}
                   </div>
-
-                  <button
-                    onClick={() => handleDeleteDocument(doc)}
-                    className="p-2 text-white/40 hover:text-red-400 transition-colors"
-                    title="Delete document"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
-              </div>
+                <button
+                  onClick={() => handleDeleteDocument(doc)}
+                  className="rounded-full p-2 text-white/40 transition hover:bg-white/10 hover:text-red-300"
+                  title="Delete document"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>

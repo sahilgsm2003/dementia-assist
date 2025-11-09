@@ -101,11 +101,6 @@ export const chatAPI = {
     return response;
   },
 
-  getKnowledgeBaseStats: async () => {
-    const response = await api.get("/rag/knowledge-base/stats");
-    return response;
-  },
-
   resetKnowledgeBase: async () => {
     const response = await api.delete("/rag/knowledge-base/reset");
     return response;

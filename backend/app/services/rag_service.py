@@ -302,37 +302,6 @@ Please provide a caring, well-organized response. Use natural paragraph breaks t
             return []
 
 
-    def get_user_knowledge_stats(self, user_id: int, db: Session) -> Dict[str, Any]:
-        """
-        Get statistics about a user's knowledge base.
-        """
-        try:
-            # Get document count from database
-            doc_count = db.query(Document).filter(Document.user_id == user_id).count()
-            
-            # Get vector index stats
-            vector_stats = self.vector_service.get_index_stats(user_id)
-            
-            # Get recent chat count
-            recent_chats = db.query(ChatMessage).filter(ChatMessage.user_id == user_id).count()
-            
-            return {
-                "total_documents": doc_count,
-                "total_text_chunks": vector_stats.get("total_vectors", 0),
-                "total_conversations": recent_chats,
-                "knowledge_base_ready": doc_count > 0
-            }
-            
-        except Exception as e:
-            print(f"Error getting knowledge stats: {e}")
-            return {
-                "total_documents": 0,
-                "total_text_chunks": 0,
-                "total_conversations": 0,
-                "knowledge_base_ready": False
-            }
-
-
     def delete_user_knowledge_base(self, user_id: int, db: Session):
         """
         Delete all knowledge base data for a user.

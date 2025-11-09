@@ -15,8 +15,8 @@ from .routers import auth, rag
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(
-    title="Empathetic Family Recognition Aid API",
-    description="The backend for the Empathetic Family Recognition Aid application.",
+    title="Moments Life Assistant API",
+    description="Backend services for the Moments personal life assistant.",
     version="0.1.0",
 )
 
@@ -42,4 +42,4 @@ def read_root():
     """
     A simple health-check endpoint to confirm the API is running.
     """
-    return {"status": "ok", "message": "Welcome to the Family Recognition Aid API!"}
+    return {"status": "ok", "message": "Welcome to the Moments Life Assistant API!"}

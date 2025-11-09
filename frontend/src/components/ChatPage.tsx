@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { MessageSquare, Upload, BarChart3, Brain } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Brain, MessageSquare, Upload } from "lucide-react";
+
 import ChatBot from "./ChatBot";
 import DocumentUpload from "./DocumentUpload";
 import { chatAPI } from "../services/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 interface Document {
   id: number;
@@ -11,52 +16,52 @@ interface Document {
   chunks_count?: number;
 }
 
-interface KnowledgeBaseStats {
-  total_documents: number;
-  total_text_chunks: number;
-  total_conversations: number;
-  knowledge_base_ready: boolean;
-}
-
 const ChatPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"chat" | "upload" | "stats">(
-    "chat"
-  );
+  const location = useLocation();
+  const defaultTab =
+    (location.state?.tab as "chat" | "documents" | undefined) ?? "chat";
+
+  const [activeTab, setActiveTab] = useState<"chat" | "documents">(defaultTab);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [stats, setStats] = useState<KnowledgeBaseStats>({
-    total_documents: 0,
-    total_text_chunks: 0,
-    total_conversations: 0,
-    knowledge_base_ready: false,
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const hasKnowledgeBase = useMemo(
+    () => documents.length > 0,
+    [documents.length]
+  );
 
   useEffect(() => {
-    loadDocuments();
-    loadStats();
+    const fetchDocuments = async () => {
+      try {
+        const response = await chatAPI.getDocuments();
+        setDocuments(response.data ?? []);
+        setLoadError(null);
+      } catch (error) {
+        console.error("Failed to fetch documents:", error);
+        setLoadError(
+          "We couldn't load your documents right now. Please refresh to try again."
+        );
+      }
+    };
+
+    fetchDocuments();
   }, []);
 
-  const loadDocuments = async () => {
+  const refreshDocuments = async () => {
     try {
       const response = await chatAPI.getDocuments();
-      setDocuments(response.data);
+      setDocuments(response.data ?? []);
+      setLoadError(null);
     } catch (error) {
-      console.error("Failed to load documents:", error);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const response = await chatAPI.getKnowledgeBaseStats();
-      setStats(response.data);
-    } catch (error) {
-      console.error("Failed to load stats:", error);
+      console.error("Failed to refresh documents:", error);
+      setLoadError("Unable to refresh documents. Please try again.");
     }
   };
 
   const handleSendMessage = async (message: string) => {
-    setIsLoading(true);
+    setIsLoadingResponse(true);
     try {
       const response = await chatAPI.sendQuestion(message);
       return response.data;
@@ -64,7 +69,7 @@ const ChatPage: React.FC = () => {
       console.error("Failed to send message:", error);
       throw error;
     } finally {
-      setIsLoading(false);
+      setIsLoadingResponse(false);
     }
   };
 
@@ -72,11 +77,7 @@ const ChatPage: React.FC = () => {
     setIsUploading(true);
     try {
       await chatAPI.uploadDocument(file);
-      await loadDocuments();
-      await loadStats();
-    } catch (error) {
-      console.error("Failed to upload document:", error);
-      throw error;
+      await refreshDocuments();
     } finally {
       setIsUploading(false);
     }
@@ -85,8 +86,7 @@ const ChatPage: React.FC = () => {
   const handleDeleteDocument = async (documentId: number) => {
     try {
       await chatAPI.deleteDocument(documentId);
-      await loadDocuments();
-      await loadStats();
+      await refreshDocuments();
     } catch (error) {
       console.error("Failed to delete document:", error);
       throw error;
@@ -97,267 +97,130 @@ const ChatPage: React.FC = () => {
     setIsUploading(true);
     try {
       await chatAPI.initializeDemo();
-      await loadDocuments();
-      await loadStats();
-    } catch (error) {
-      console.error("Failed to initialize demo:", error);
-      throw error;
+      await refreshDocuments();
     } finally {
       setIsUploading(false);
     }
   };
 
-  const tabs = [
-    { id: "chat" as const, label: "Chat", icon: MessageSquare },
-    { id: "upload" as const, label: "Documents", icon: Upload },
-    { id: "stats" as const, label: "Statistics", icon: BarChart3 },
-  ];
-
   return (
-    <div className="min-h-screen pt-24 px-6">
-      {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8">
-        <div className="flex items-center justify-between py-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#E02478] to-purple-600 rounded-lg shadow-lg shadow-[#E02478]/30">
-              <Brain className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Life Assistant</h1>
-              <p className="text-lg text-white/70">
-                Your personal memory companion powered by AI
-              </p>
-            </div>
-          </div>
-
-          {/* Knowledge Base Status */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-sm font-medium text-white">
-                {stats.total_documents} Document
-                {stats.total_documents !== 1 ? "s" : ""}
+    <div className="container mx-auto px-6">
+      <div className="space-y-12">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur"
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-4">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#E02478]/15 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-[#E02478]">
+                <Brain className="h-4 w-4" />
+                Life assistant
+              </span>
+              <div className="space-y-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                  Ask gentle questions. Get warm, personal answers.
+                </h1>
+                <p className="max-w-2xl text-base text-white/70 md:text-lg">
+                  Moments remembers the people, dates, and routines inside your documents. Keep
+                  conversations reassuring and accurate—whenever you need support.
+                </p>
               </div>
-              <div className="text-xs text-white/70">
-                {stats.total_text_chunks} chunks indexed
+              <div className="flex flex-wrap items-center gap-3 text-sm text-white/60">
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
+                  {documents.length} document{documents.length === 1 ? "" : "s"} loaded
+                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
+                  Speech + voice support built in
+                </span>
               </div>
             </div>
-            <div
-              className={`px-4 py-2 rounded-full text-xs font-medium backdrop-blur-sm ${
-                stats.knowledge_base_ready
-                  ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                  : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-              }`}
-            >
-              {stats.knowledge_base_ready ? "Ready" : "Setup Required"}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Navigation */}
-      <div className="max-w-6xl mx-auto mb-8">
-        <div className="bg-black/40 backdrop-blur-sm rounded-lg border border-white/10">
-          <nav className="flex space-x-2 p-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-[#E02478] text-white shadow-lg shadow-[#E02478]/30"
-                      : "text-white/70 hover:text-white hover:bg-white/10"
-                  }`}
+            <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-black/30 p-6 text-left backdrop-blur">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-white/60">
+                Quick actions
+              </h2>
+              <div className="mt-4 space-y-3">
+                <Button
+                  className="w-full justify-between rounded-xl bg-[#E02478] px-5 py-6 text-base font-semibold hover:bg-[#E02478]/85"
+                  onClick={() => setActiveTab("chat")}
                 >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+                  Start a conversation
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between rounded-xl border-white/15 bg-white/5 px-5 py-6 text-base font-semibold text-white hover:bg-white/15"
+                  onClick={() => setActiveTab("documents")}
+                >
+                  Manage documents
+                  <Upload className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.section>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto">
-        {activeTab === "chat" && (
-          <div className="max-w-4xl mx-auto">
-            {!stats.knowledge_base_ready ? (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 backdrop-blur-sm rounded-lg p-6 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-yellow-500/20 rounded-full">
-                    <Upload className="w-5 h-5 text-yellow-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-yellow-100">
-                      Setup Required
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "chat" | "documents")}
+          className="space-y-8"
+        >
+          <TabsList className="bg-white/5">
+            <TabsTrigger value="chat">Conversation</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="chat" className="space-y-6">
+            {!hasKnowledgeBase ? (
+              <div className="max-w-4xl rounded-2xl border border-white/15 bg-yellow-500/10 p-8 text-yellow-50 backdrop-blur">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-yellow-100">
+                      Add a document to begin chatting
                     </h3>
-                    <p className="text-yellow-200 mt-1">
-                      Upload some documents first to start chatting. Go to the
-                      Documents tab to get started.
+                    <p className="text-sm text-yellow-200">
+                      Upload a diary, care plan, or set of notes so the assistant can give thoughtful,
+                      accurate answers.
                     </p>
-                    <button
-                      onClick={() => setActiveTab("upload")}
-                      className="mt-3 px-4 py-2 bg-[#E02478] text-white rounded-lg hover:bg-[#E02478]/80 transition-colors shadow-lg shadow-[#E02478]/30"
-                    >
-                      Upload Documents
-                    </button>
                   </div>
+                  <Button
+                    onClick={() => setActiveTab("documents")}
+                    className="w-full rounded-full bg-white px-6 py-3 text-[#E02478] hover:bg-white/90 sm:w-auto"
+                  >
+                    Upload a PDF
+                  </Button>
                 </div>
               </div>
-            ) : (
-              <div className="h-[600px]">
+            ) : null}
+
+            <div className="max-w-5xl rounded-2xl border border-white/15 bg-black/30 p-2 backdrop-blur">
+              <div className="h-[620px]">
                 <ChatBot
                   onSendMessage={handleSendMessage}
-                  isLoading={isLoading}
+                  isLoading={isLoadingResponse}
                   className="h-full"
                 />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          </TabsContent>
 
-        {activeTab === "upload" && (
-          <div className="max-w-4xl mx-auto">
+          <TabsContent value="documents" className="max-w-5xl">
             <DocumentUpload
               documents={documents}
               onUpload={handleUploadDocument}
               onDelete={handleDeleteDocument}
               onInitializeDemo={handleInitializeDemo}
               isUploading={isUploading}
+              className="rounded-2xl border border-white/15 bg-black/30 p-6 backdrop-blur"
             />
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
 
-        {activeTab === "stats" && (
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Documents */}
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-white/70">
-                      Documents
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {stats.total_documents}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-[#E02478]/20 rounded-full">
-                    <Upload className="w-6 h-6 text-[#E02478]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Text Chunks */}
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-white/70">
-                      Text Chunks
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {stats.total_text_chunks}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-500/20 rounded-full">
-                    <Brain className="w-6 h-6 text-green-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Conversations */}
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-white/70">
-                      Conversations
-                    </p>
-                    <p className="text-2xl font-bold text-white">
-                      {stats.total_conversations}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-500/20 rounded-full">
-                    <MessageSquare className="w-6 h-6 text-purple-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-white/70">Status</p>
-                    <p
-                      className={`text-lg font-bold ${
-                        stats.knowledge_base_ready
-                          ? "text-green-400"
-                          : "text-yellow-400"
-                      }`}
-                    >
-                      {stats.knowledge_base_ready ? "Ready" : "Setup Needed"}
-                    </p>
-                  </div>
-                  <div
-                    className={`p-3 rounded-full ${
-                      stats.knowledge_base_ready
-                        ? "bg-green-500/20"
-                        : "bg-yellow-500/20"
-                    }`}
-                  >
-                    <BarChart3
-                      className={`w-6 h-6 ${
-                        stats.knowledge_base_ready
-                          ? "text-green-400"
-                          : "text-yellow-400"
-                      }`}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="mt-8 bg-black/40 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Getting Started
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      stats.total_documents > 0 ? "bg-green-400" : "bg-white/30"
-                    }`}
-                  />
-                  <span className="text-sm text-white/70">
-                    Upload your first document
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      stats.total_conversations > 0
-                        ? "bg-green-400"
-                        : "bg-white/30"
-                    }`}
-                  />
-                  <span className="text-sm text-white/70">
-                    Start your first conversation
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      stats.total_documents > 3 ? "bg-green-400" : "bg-white/30"
-                    }`}
-                  />
-                  <span className="text-sm text-white/70">
-                    Build your knowledge base (3+ documents)
-                  </span>
-                </div>
-              </div>
-            </div>
+        {loadError && (
+          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+            {loadError}
           </div>
         )}
       </div>
@@ -366,3 +229,4 @@ const ChatPage: React.FC = () => {
 };
 
 export default ChatPage;
+

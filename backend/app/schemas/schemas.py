@@ -63,10 +63,3 @@ class ChatHistory(BaseModel):
     confidence_score: Optional[float] = None
     created_at: datetime
 
-
-class KnowledgeBaseStats(BaseModel):
-    total_documents: int
-    total_text_chunks: int
-    total_conversations: int
-    knowledge_base_ready: bool
-

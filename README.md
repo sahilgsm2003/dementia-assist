@@ -1,6 +1,4 @@
-# Empathetic Family Recognition Aid
-
-AI powered companion system for people affected by dementia.
+# AI powered companion system for people affected by dementia.
 
 ## Prerequisites
 
@@ -116,31 +114,3 @@ npm run dev
 The frontend application will be available at `http://localhost:5173`
 
 > **Note:** Make sure the backend server is running before using the frontend application, as it depends on the API endpoints.
-
-## Project Structure
-
-```
-major-project/
-├── backend/                 # FastAPI backend
-│   ├── app/
-│   │   ├── core/           # Configuration files
-│   │   ├── db/             # Database setup
-│   │   ├── models/         # SQLAlchemy models
-│   │   ├── routers/        # API route handlers
-│   │   ├── schemas/        # Pydantic schemas
-│   │   ├── services/       # Business logic
-│   │   └── main.py         # FastAPI application entry point
-│   ├── faiss_indexes/      # Vector database indexes
-│   ├── rag-docs/           # Sample documents for RAG
-│   ├── uploads/            # User uploaded files
-│   ├── requirements.txt    # Python dependencies
-│   └── .env               # Environment variables (create this)
-├── frontend/               # React + Vite frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── context/        # React context providers
-│   │   ├── services/       # API service functions
-│   │   └── main.tsx        # Application entry point
-│   └── package.json        # Node.js dependencies
-└── README.md              # This file
-```

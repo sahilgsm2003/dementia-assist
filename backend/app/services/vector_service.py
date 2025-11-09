@@ -232,7 +232,8 @@ class VectorService:
             scores, indices = index.search(query_vector, min(k, index.ntotal))
             
             # Prepare results
-            results = []
+            filtered_results = []
+            ranked_candidates = []
             for i, (score, idx) in enumerate(zip(scores[0], indices[0])):
                 if idx >= 0 and idx < len(metadata):  # Valid index
                     result = {
@@ -241,12 +242,18 @@ class VectorService:
                         'similarity_score': float(score),
                         'rank': i + 1
                     }
+                    ranked_candidates.append(result)
                     
                     # Filter by similarity threshold
                     if score >= settings.SIMILARITY_THRESHOLD:
-                        results.append(result)
+                        filtered_results.append(result)
             
-            return results
+            if filtered_results:
+                return filtered_results
+            
+            # If nothing met the threshold, fall back to the top candidates
+            min_results = max(getattr(settings, 'MIN_CONTEXT_RESULTS', 1), 1)
+            return ranked_candidates[:min_results]
             
         except Exception as e:
             print(f"Error searching documents for user {user_id}: {e}")

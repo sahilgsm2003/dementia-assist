@@ -10,7 +10,7 @@ load_dotenv()
 
 from .db import database
 from .models import models
-from .routers import auth, rag, memories, reminders, locations
+from .routers import auth, rag, memories, reminders, locations, medications, emergency, voice_notes, search, family
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -21,9 +21,10 @@ app = FastAPI(
 )
 
 # Configure CORS
+# Allow all origins for development (restrict in production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Frontend URLs
+    allow_origins=["*"],  # Allow all origins for mobile testing
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -38,6 +39,11 @@ app.include_router(rag.router)
 app.include_router(memories.router)
 app.include_router(reminders.router)
 app.include_router(locations.router)
+app.include_router(medications.router)
+app.include_router(emergency.router)
+app.include_router(voice_notes.router)
+app.include_router(search.router)
+app.include_router(family.router)
 
 
 @app.get("/")

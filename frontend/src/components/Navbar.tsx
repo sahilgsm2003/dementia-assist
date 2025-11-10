@@ -1,14 +1,25 @@
 import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Heart, Shield, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-export const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+export const Navbar = ({ onSearchClick }: { onSearchClick?: () => void }) => {
+  // Safely get auth context - return null if not available
+  let isAuthenticated = false;
+  let logout = () => {};
+  
+  try {
+    const auth = useAuth();
+    isAuthenticated = auth.isAuthenticated;
+    logout = auth.logout;
+  } catch (error) {
+    // AuthProvider not available - this is OK for public routes
+    console.debug("Auth context not available");
+  }
+  
   const navigate = useNavigate();
-  const location = useLocation();
   const { scrollY } = useScroll();
 
   const background = useTransform(
@@ -22,18 +33,6 @@ export const Navbar = () => {
   const borderOpacity = useTransform(scrollY, [0, 120], [0, 0.4]);
 
   const border = useMotionTemplate`1px solid rgba(255,255,255, ${borderOpacity})`;
-  const isOnDashboard = location.pathname.startsWith("/dashboard");
-  const isOnAssistant = location.pathname.startsWith("/chatbot");
-  const isOnMemoryVault = location.pathname.startsWith("/memory-vault");
-  const isOnReminders = location.pathname.startsWith("/reminders");
-  const isOnLocations = location.pathname.startsWith("/locations");
-
-  const navLinks = [
-    { label: "Dashboard", path: "/dashboard", active: isOnDashboard },
-    { label: "Memory Vault", path: "/memory-vault", active: isOnMemoryVault },
-    { label: "Reminders", path: "/reminders", active: isOnReminders },
-    { label: "Locations", path: "/locations", active: isOnLocations },
-  ];
 
   return (
     <motion.header
@@ -47,52 +46,42 @@ export const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
         <Link to="/" className="flex items-center gap-2 group">
           <motion.span
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]"
+            className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]"
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.96 }}
             transition={{ duration: 0.2 }}
           >
-            <Heart className="h-5 w-5" />
+            <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
           </motion.span>
-          <span className="text-xl font-semibold tracking-tight text-white group-hover:text-[#E02478] transition-colors">
+          <span className="text-lg sm:text-xl font-semibold tracking-tight text-white group-hover:text-[#E02478] transition-colors">
             Moments
           </span>
         </Link>
 
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 sm:gap-3 text-sm">
           {isAuthenticated ? (
             <>
-              <div className="hidden md:flex items-center gap-2">
-                {navLinks.map((link) => (
-                  <Button
-                    key={link.path}
-                    variant="ghost"
-                    className={cn(
-                      "text-white/70 hover:text-white transition-colors",
-                      link.active && "text-white font-semibold bg-white/5"
-                    )}
-                    aria-current={link.active ? "page" : undefined}
-                    onClick={() => navigate(link.path)}
-                  >
-                    {link.label}
-                  </Button>
-                ))}
-              </div>
+              {onSearchClick && (
+                <Button
+                  variant="outline"
+                  onClick={onSearchClick}
+                  className="hidden sm:inline-flex items-center gap-2 border-white/20 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                  title="Search (Ctrl+K)"
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="hidden md:inline">Search</span>
+                </Button>
+              )}
               <Button
-                variant="secondary"
-                className={cn(
-                  "hidden sm:inline-flex items-center gap-2",
-                  isOnAssistant &&
-                    "bg-[#E02478] text-white shadow-lg shadow-[#E02478]/30 hover:bg-[#E02478]/85"
-                )}
-                aria-current={isOnAssistant ? "page" : undefined}
-                onClick={() => navigate("/chatbot")}
+                variant="outline"
+                onClick={() => navigate("/safety")}
+                className="hidden sm:inline-flex items-center gap-2 border-red-500/50 bg-red-500/10 text-red-200 hover:bg-red-500/20"
               >
-                <MessageCircle className="h-4 w-4" />
-                Open Assistant
+                <Shield className="h-4 w-4" />
+                Emergency
               </Button>
               <Button
                 variant="outline"
@@ -100,6 +89,7 @@ export const Navbar = () => {
                   logout();
                   navigate("/");
                 }}
+                className="text-xs sm:text-sm"
               >
                 Log out
               </Button>
@@ -107,13 +97,14 @@ export const Navbar = () => {
           ) : (
             <>
               <Link to="/auth">
-                <Button variant="ghost" className="text-white/70 hover:text-white">
+                <Button variant="ghost" className="text-white/70 hover:text-white text-xs sm:text-sm px-2 sm:px-4">
                   Log in
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-[#E02478] text-white hover:bg-[#E02478]/85">
-                  Create account
+                <Button className="bg-[#E02478] text-white hover:bg-[#E02478]/85 text-xs sm:text-sm px-3 sm:px-4">
+                  <span className="hidden sm:inline">Create account</span>
+                  <span className="sm:hidden">Sign up</span>
                 </Button>
               </Link>
             </>

@@ -1,12 +1,5 @@
-import React, { useState, useRef } from "react";
-import {
-  Upload,
-  FileText,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Trash2,
-} from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { toast } from "@/hooks/use-toast";
 
 interface Document {
   id: number;
@@ -38,6 +31,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   >("idle");
   const [uploadMessage, setUploadMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -92,14 +87,28 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   };
 
   const handleDeleteDocument = async (doc: Document) => {
-    if (window.confirm(`Are you sure you want to delete "${doc.filename}"?`)) {
-      try {
-        await onDelete(doc.id);
-      } catch (error) {
-        setUploadStatus("error");
-        setUploadMessage("Failed to delete document. Please try again.");
-        setTimeout(() => setUploadStatus("idle"), 3000);
-      }
+    setDocumentToDelete(doc);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+
+    try {
+      await onDelete(documentToDelete.id);
+      toast({
+        title: "Success",
+        description: `"${documentToDelete.filename}" deleted successfully`,
+      });
+    } catch (error) {
+      console.error("Failed to delete document", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDocumentToDelete(null);
     }
   };
 
@@ -239,6 +248,17 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${documentToDelete?.filename}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

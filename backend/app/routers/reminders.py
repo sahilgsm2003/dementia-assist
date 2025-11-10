@@ -32,6 +32,8 @@ async def list_reminders(
             time=reminder.time,
             notification_sound=reminder.notification_sound,
             status=reminder.status,
+            reminder_type=reminder.reminder_type,
+            trigger_conditions=reminder.trigger_conditions,
             created_at=reminder.created_at,
         )
         for reminder in reminders
@@ -61,6 +63,8 @@ async def create_reminder(
         time=reminder.time,
         notification_sound=reminder.notification_sound,
         status=reminder.status,
+        reminder_type=reminder.reminder_type,
+        trigger_conditions=reminder.trigger_conditions,
         created_at=reminder.created_at,
     )
 
@@ -86,6 +90,8 @@ async def update_reminder(
         time=reminder.time,
         notification_sound=reminder.notification_sound,
         status=reminder.status,
+        reminder_type=reminder.reminder_type,
+        trigger_conditions=reminder.trigger_conditions,
         created_at=reminder.created_at,
     )
 
@@ -122,6 +128,8 @@ async def complete_reminder(
         time=reminder.time,
         notification_sound=reminder.notification_sound,
         status=reminder.status,
+        reminder_type=reminder.reminder_type,
+        trigger_conditions=reminder.trigger_conditions,
         created_at=reminder.created_at,
     )
 
@@ -147,6 +155,8 @@ async def snooze_reminder(
         time=reminder.time,
         notification_sound=reminder.notification_sound,
         status=reminder.status,
+        reminder_type=reminder.reminder_type,
+        trigger_conditions=reminder.trigger_conditions,
         created_at=reminder.created_at,
     )
 

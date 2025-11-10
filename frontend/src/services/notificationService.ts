@@ -158,20 +158,22 @@ class NotificationService {
     // Start continuous sound
     await this.playContinuousSound(reminder.id, reminder.notification_sound);
     
-    // Since we can't use actions without Service Worker, we'll show a browser alert
-    // after a short delay to allow user interaction
+    // Emit a custom event for reminder interaction
+    // Components can listen to this event and show a dialog
     setTimeout(() => {
       if (this.activeNotifications.has(reminder.id)) {
-        const userAction = confirm(
-          `Reminder: ${reminder.title}\n\n${reminder.description || "Time for your reminder!"}\n\n` +
-          `Click OK to mark as done, or Cancel to snooze for 5 minutes.`
+        // Emit event instead of using confirm()
+        window.dispatchEvent(
+          new CustomEvent("reminder-notification", {
+            detail: {
+              reminderId: reminder.id,
+              title: reminder.title,
+              description: reminder.description || "Time for your reminder!",
+              onConfirm: () => this.handleMarkDone(reminder.id),
+              onCancel: () => this.handleSnooze(reminder.id),
+            },
+          })
         );
-        
-        if (userAction) {
-          this.handleMarkDone(reminder.id);
-        } else {
-          this.handleSnooze(reminder.id);
-        }
       }
     }, 1000); // Show dialog after 1 second
   }

@@ -59,12 +59,11 @@ export const AuthPage = ({ type }: AuthPageProps) => {
     try {
       if (showLogin) {
         await login(formData.username, formData.password);
-        navigate("/dashboard");
+        navigate("/home");
       } else {
         await register(formData.username, formData.password);
-        setShowLogin(true);
-        setFormData({ username: "", password: "", confirmPassword: "" });
-        // Show success message or automatically switch to login
+        // Redirect to onboarding after registration
+        navigate("/onboarding");
       }
     } catch (error: any) {
       const errorMessage =

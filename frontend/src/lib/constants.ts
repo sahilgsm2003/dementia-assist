@@ -127,3 +127,118 @@ export const breakpoints = {
   "2xl": "1536px",
 } as const;
 
+// API Endpoints
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: "/token",
+    REGISTER: "/users/",
+    CURRENT_USER: "/users/me",
+  },
+  CHAT: {
+    SEND_QUESTION: "/rag/chat/query",
+    HISTORY: "/rag/chat/history",
+  },
+  DOCUMENTS: {
+    UPLOAD: "/rag/documents/upload",
+    LIST: "/rag/documents/",
+    DELETE: (id: number) => `/rag/documents/${id}`,
+    RESET: "/rag/knowledge-base/reset",
+    INITIALIZE_DEMO: "/rag/initialize-demo",
+  },
+  PEOPLE: {
+    LIST: "/people/",
+    CREATE: "/people/",
+    DETAIL: (id: number) => `/people/${id}`,
+    UPDATE: (id: number) => `/people/${id}`,
+    DELETE: (id: number) => `/people/${id}`,
+    PHOTOS: (id: number) => `/people/${id}/photos`,
+    MEMORIES: (id: number) => `/people/${id}/memories`,
+  },
+  MEMORIES: {
+    PHOTOS: "/memories/photos",
+    SEARCH: "/memories/photos/search",
+  },
+  REMINDERS: {
+    LIST: "/reminders/",
+    CREATE: "/reminders/",
+    UPDATE: (id: number) => `/reminders/${id}`,
+    DELETE: (id: number) => `/reminders/${id}`,
+    COMPLETE: (id: number) => `/reminders/${id}/complete`,
+    SNOOZE: (id: number) => `/reminders/${id}/snooze`,
+  },
+  LOCATIONS: {
+    LIST: "/locations/",
+    CREATE: "/locations/",
+    UPDATE: (id: number) => `/locations/${id}`,
+    DELETE: (id: number) => `/locations/${id}`,
+    LIVE: "/locations/live",
+  },
+    MEDICATIONS: {
+      LIST: "/medications/",
+      CREATE: "/medications/",
+      UPDATE: (id: number) => `/medications/${id}`,
+      DELETE: (id: number) => `/medications/${id}`,
+      TODAY: "/medications/today",
+      TRACK: (id: number) => `/medications/${id}/track`,
+    },
+        EMERGENCY: {
+          GET: "/emergency/",
+          CREATE: "/emergency/",
+          UPDATE: "/emergency/",
+        },
+        VOICE_NOTES: {
+          CREATE: "/voice-notes/",
+          GET: (id: string) => `/voice-notes/${id}`,
+          DELETE: (id: string) => `/voice-notes/${id}`,
+          LIST: "/voice-notes/",
+        },
+        QUICK_FACTS: {
+          GET: "/users/me/quick-facts",
+          UPDATE: "/users/me/quick-facts",
+        },
+        SEARCH: {
+          GLOBAL: "/search",
+        },
+        FAMILY: {
+          INVITE: "/family/invite",
+          MEMBERS: "/family/members",
+          ACTIVITY: "/family/activity",
+          ACCEPT_INVITE: (id: number) => `/family/accept-invite/${id}`,
+          REMOVE_MEMBER: (id: number) => `/family/members/${id}`,
+        },
+} as const;
+
+// Time Intervals (in milliseconds)
+export const INTERVALS = {
+  REMINDER_CHECK: 30000, // 30 seconds
+  LOCATION_UPDATE: 60000, // 1 minute
+  NOTIFICATION_CHECK: 30000, // 30 seconds
+  CHAT_POLL: 5000, // 5 seconds
+} as const;
+
+// File Limits
+export const FILE_LIMITS = {
+  MAX_UPLOAD_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
+  ACCEPTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/webp"],
+  ACCEPTED_DOCUMENT_TYPES: ["application/pdf"],
+} as const;
+
+// Validation Rules
+export const VALIDATION = {
+  USERNAME_MIN_LENGTH: 3,
+  USERNAME_MAX_LENGTH: 50,
+  PASSWORD_MIN_LENGTH: 6,
+  PASSWORD_MAX_LENGTH: 100,
+  TITLE_MAX_LENGTH: 200,
+  DESCRIPTION_MAX_LENGTH: 1000,
+} as const;
+
+// Common Time Formats
+export const TIME_FORMATS = {
+  DISPLAY: "h:mm A", // 2:30 PM
+  INPUT: "HH:mm", // 14:30
+  DATE_DISPLAY: "MMMM d, yyyy", // January 15, 2024
+  DATE_INPUT: "yyyy-MM-dd", // 2024-01-15
+} as const;
+

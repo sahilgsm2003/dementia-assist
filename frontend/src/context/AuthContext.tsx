@@ -87,7 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (username: string, password: string) => {
     try {
       await authAPI.register(username, password);
-      // Registration successful - user should now login
+      // Auto-login after successful registration
+      await login(username, password);
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;

@@ -41,6 +41,8 @@ def create_reminder(
         date=payload.date,
         time=payload.time,
         notification_sound=payload.notification_sound,
+        reminder_type=payload.reminder_type or "time",
+        trigger_conditions=payload.trigger_conditions,
     )
     db.add(reminder)
     db.commit()

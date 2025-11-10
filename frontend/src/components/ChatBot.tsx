@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 import {
   Send,
   Bot,
@@ -297,9 +297,11 @@ const ChatBot: React.FC<ChatBotProps> = ({
   // Start/stop speech recognition
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
-      alert(
-        "Speech recognition is not supported in your browser. Please use Chrome or Edge."
-      );
+      toast({
+        title: "Not Supported",
+        description: "Speech recognition is not supported in your browser. Please use Chrome or Edge.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -314,7 +316,11 @@ const ChatBot: React.FC<ChatBotProps> = ({
   // Speak message with word highlighting
   const speakMessage = (messageId: string, text: string) => {
     if (!synthesisRef.current) {
-      alert("Text-to-speech is not supported in your browser.");
+      toast({
+        title: "Not Supported",
+        description: "Text-to-speech is not supported in your browser.",
+        variant: "destructive",
+      });
       return;
     }
 

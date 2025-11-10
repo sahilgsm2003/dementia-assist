@@ -11,8 +11,11 @@ import {
   MapPin,
   MessageCircle,
   Upload,
+  Shield,
+  Pill,
 } from "lucide-react";
-import { chatAPI, locationsAPI, memoriesAPI, remindersAPI } from "@/services/api";
+import { chatAPI, locationsAPI, memoriesAPI, remindersAPI, medicationsAPI } from "@/services/api";
+import { EmergencyCard } from "@/components/safety/EmergencyCard";
 
 interface DocumentSummary {
   id: number;
@@ -47,6 +50,7 @@ export const DashboardPage = () => {
   const [memoryCount, setMemoryCount] = useState<number>(0);
   const [todayReminders, setTodayReminders] = useState<ReminderSummary[]>([]);
   const [liveLocation, setLiveLocation] = useState<LiveLocationSummary | null>(null);
+  const [medicationCount, setMedicationCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,12 +64,13 @@ export const DashboardPage = () => {
         const today = new Date();
         const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-        const [documentsResponse, memoriesResponse, remindersResponse, liveLocationResponse] =
+        const [documentsResponse, memoriesResponse, remindersResponse, liveLocationResponse, medicationsResponse] =
           await Promise.allSettled([
             chatAPI.getDocuments(),
             memoriesAPI.listPhotos(),
             remindersAPI.listReminders(todayIso),
             locationsAPI.getLiveLocation(),
+            medicationsAPI.listMedications(),
           ]);
 
         if (documentsResponse.status === "fulfilled") {
@@ -89,6 +94,10 @@ export const DashboardPage = () => {
         }
         if (liveLocationResponse.status === "fulfilled") {
           setLiveLocation(liveLocationResponse.value ?? null);
+        }
+        if (medicationsResponse.status === "fulfilled") {
+          const data = medicationsResponse.value ?? [];
+          setMedicationCount(Array.isArray(data) ? data.length : 0);
         }
 
         setError(null);
@@ -152,9 +161,9 @@ export const DashboardPage = () => {
                 <Button
                   variant="outline"
                   className="rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20"
-                  onClick={() => navigate("/memory-vault")}
+                  onClick={() => navigate("/my-people")}
                 >
-                  Memory vault
+                  My People
                 </Button>
                 <Button
                   variant="outline"
@@ -198,79 +207,111 @@ export const DashboardPage = () => {
           </div>
         </motion.section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="grid gap-4 md:grid-cols-3"
-        >
-          <motion.div
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
           >
-            <Card
-              className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
-              onClick={() => navigate("/memory-vault")}
+            {/* Emergency Card Widget */}
+            <motion.div
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
             >
-            <CardContent className="space-y-2 p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/70">Memory Vault</span>
-                <Brain className="h-4 w-4 text-[#E02478]" />
-              </div>
-              <p className="text-3xl font-semibold text-white">{memoryCount}</p>
-              <p className="text-xs text-white/60">
-                Memories saved with faces and stories for quick recall.
-              </p>
-            </CardContent>
-          </Card>
-          </motion.div>
-          <motion.div
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card
-            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
-            onClick={() => navigate("/reminders")}
-          >
-            <CardContent className="space-y-2 p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/70">Today</span>
-                <AlarmClock className="h-4 w-4 text-[#E02478]" />
-              </div>
-              <p className="text-3xl font-semibold text-white">{todayReminders.length}</p>
-              <p className="text-xs text-white/60">
-                {todayReminders.length
-                  ? `Next: ${todayReminders[0].title} at ${todayReminders[0].time.slice(0, 5)}`
-                  : "No reminders scheduled for today."}
-              </p>
-            </CardContent>
-          </Card>
-          </motion.div>
-          <motion.div
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card
-            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
-            onClick={() => navigate("/locations")}
-          >
-            <CardContent className="space-y-2 p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/70">Live location</span>
-                <MapPin className="h-4 w-4 text-[#E02478]" />
-              </div>
-              <p className="text-3xl font-semibold text-white">
-                {liveLocation ? "Active" : "Waiting"}
-              </p>
-              <p className="text-xs text-white/60">
-                {liveLocation
-                  ? `Updated ${new Date(liveLocation.updated_at).toLocaleTimeString()}`
-                  : "Enable location sharing to see updates here."}
-              </p>
-            </CardContent>
-          </Card>
-          </motion.div>
-        </motion.section>
+              <EmergencyCard compact />
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Card
+                className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+                onClick={() => navigate("/my-people")}
+              >
+                <CardContent className="space-y-2 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white/70">My People</span>
+                    <Brain className="h-4 w-4 text-[#E02478]" />
+                  </div>
+                  <p className="text-3xl font-semibold text-white">{memoryCount}</p>
+                  <p className="text-xs text-white/60">
+                    People saved with faces and stories for quick recall.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Card
+                className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+                onClick={() => navigate("/reminders")}
+              >
+                <CardContent className="space-y-2 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white/70">Today</span>
+                    <AlarmClock className="h-4 w-4 text-[#E02478]" />
+                  </div>
+                  <p className="text-3xl font-semibold text-white">{todayReminders.length}</p>
+                  <p className="text-xs text-white/60">
+                    {todayReminders.length
+                      ? `Next: ${todayReminders[0].title} at ${todayReminders[0].time.slice(0, 5)}`
+                      : "No reminders scheduled for today."}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Card
+                className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+                onClick={() => navigate("/locations")}
+              >
+                <CardContent className="space-y-2 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white/70">Live location</span>
+                    <MapPin className="h-4 w-4 text-[#E02478]" />
+                  </div>
+                  <p className="text-3xl font-semibold text-white">
+                    {liveLocation ? "Active" : "Waiting"}
+                  </p>
+                  <p className="text-xs text-white/60">
+                    {liveLocation
+                      ? `Updated ${new Date(liveLocation.updated_at).toLocaleTimeString()}`
+                      : "Enable location sharing to see updates here."}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Card
+                className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+                onClick={() => navigate("/medications")}
+              >
+                <CardContent className="space-y-2 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white/70">Medications</span>
+                    <Pill className="h-4 w-4 text-[#E02478]" />
+                  </div>
+                  <p className="text-3xl font-semibold text-white">
+                    {medicationCount}
+                  </p>
+                  <p className="text-xs text-white/60">
+                    {medicationCount === 0
+                      ? "Add medications to track your daily doses."
+                      : `${medicationCount} medication${medicationCount === 1 ? "" : "s"} tracked`}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.section>
 
         <motion.section
           initial={{ opacity: 0, y: 18 }}

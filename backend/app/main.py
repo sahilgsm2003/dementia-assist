@@ -10,7 +10,7 @@ load_dotenv()
 
 from .db import database
 from .models import models
-from .routers import auth, rag
+from .routers import auth, rag, memories, reminders, locations
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -35,6 +35,9 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(rag.router)
+app.include_router(memories.router)
+app.include_router(reminders.router)
+app.include_router(locations.router)
 
 
 @app.get("/")

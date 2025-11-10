@@ -13,3 +13,7 @@ google-generativeai
 faiss-cpu
 pypdf2
 numpy
+face-recognition
+Pillow
+cmake
+setuptools

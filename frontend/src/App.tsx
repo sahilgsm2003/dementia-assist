@@ -10,6 +10,9 @@ import { LandingPage } from "./components/LandingPage";
 import { AuthPage } from "./components/AuthPage";
 import { DashboardPage } from "./components/DashboardPage";
 import ChatPage from "./components/ChatPage";
+import MemoryVaultPage from "./components/MemoryVaultPage";
+import RemindersPage from "./components/RemindersPage";
+import LocationsPage from "./components/LocationsPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -37,6 +40,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/memory-vault"
+              element={
+                <ProtectedRoute>
+                  <MemoryVaultPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reminders"
+              element={
+                <ProtectedRoute>
+                  <RemindersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations"
+              element={
+                <ProtectedRoute>
+                  <LocationsPage />
                 </ProtectedRoute>
               }
             />

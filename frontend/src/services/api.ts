@@ -112,4 +112,129 @@ export const chatAPI = {
   },
 };
 
+// Memory Vault API
+export const memoriesAPI = {
+  uploadPhoto: async (formData: FormData) => {
+    const response = await api.post("/memories/photos", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  listPhotos: async () => {
+    const response = await api.get("/memories/photos");
+    return response.data;
+  },
+
+  searchByPhoto: async (formData: FormData) => {
+    const response = await api.post("/memories/photos/search", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+};
+
+// Reminders API
+export const remindersAPI = {
+  listReminders: async (date?: string) => {
+    const params = date ? { date } : {};
+    const response = await api.get("/reminders/", { params });
+    return response.data;
+  },
+
+  createReminder: async (payload: {
+    title: string;
+    description?: string;
+    date: string;
+    time: string;
+    notification_sound?: string | null;
+  }) => {
+    const response = await api.post("/reminders/", payload);
+    return response.data;
+  },
+
+  updateReminder: async (
+    reminderId: number,
+    payload: Partial<{
+      title: string;
+      description: string;
+      date: string;
+      time: string;
+      notification_sound?: string | null;
+    }>
+  ) => {
+    const response = await api.put(`/reminders/${reminderId}`, payload);
+    return response.data;
+  },
+
+  deleteReminder: async (reminderId: number) => {
+    await api.delete(`/reminders/${reminderId}`);
+  },
+
+  completeReminder: async (reminderId: number) => {
+    const response = await api.post(`/reminders/${reminderId}/complete`);
+    return response.data;
+  },
+
+  snoozeReminder: async (reminderId: number, minutes: number = 5) => {
+    const response = await api.post(`/reminders/${reminderId}/snooze`, null, {
+      params: { snooze_minutes: minutes },
+    });
+    return response.data;
+  },
+};
+
+// Locations API
+export const locationsAPI = {
+  listPlaces: async () => {
+    const response = await api.get("/locations/");
+    return response.data;
+  },
+
+  createPlace: async (payload: {
+    name: string;
+    description?: string;
+    latitude: number;
+    longitude: number;
+  }) => {
+    const response = await api.post("/locations/", payload);
+    return response.data;
+  },
+
+  updatePlace: async (
+    placeId: number,
+    payload: Partial<{
+      name: string;
+      description: string;
+      latitude: number;
+      longitude: number;
+    }>
+  ) => {
+    const response = await api.patch(`/locations/${placeId}`, payload);
+    return response.data;
+  },
+
+  deletePlace: async (placeId: number) => {
+    await api.delete(`/locations/${placeId}`);
+  },
+
+  getLiveLocation: async () => {
+    const response = await api.get("/locations/live");
+    return response.data;
+  },
+
+  updateLiveLocation: async (payload: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number | null;
+  }) => {
+    const response = await api.post("/locations/live", payload);
+    return response.data;
+  },
+};
+
 export default api;

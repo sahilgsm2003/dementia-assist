@@ -24,6 +24,16 @@ export const Navbar = () => {
   const border = useMotionTemplate`1px solid rgba(255,255,255, ${borderOpacity})`;
   const isOnDashboard = location.pathname.startsWith("/dashboard");
   const isOnAssistant = location.pathname.startsWith("/chatbot");
+  const isOnMemoryVault = location.pathname.startsWith("/memory-vault");
+  const isOnReminders = location.pathname.startsWith("/reminders");
+  const isOnLocations = location.pathname.startsWith("/locations");
+
+  const navLinks = [
+    { label: "Dashboard", path: "/dashboard", active: isOnDashboard },
+    { label: "Memory Vault", path: "/memory-vault", active: isOnMemoryVault },
+    { label: "Reminders", path: "/reminders", active: isOnReminders },
+    { label: "Locations", path: "/locations", active: isOnLocations },
+  ];
 
   return (
     <motion.header
@@ -51,17 +61,22 @@ export const Navbar = () => {
         <div className="flex items-center gap-3 text-sm">
           {isAuthenticated ? (
             <>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "text-white/70 hover:text-white",
-                  isOnDashboard && "text-white font-semibold"
-                )}
-                aria-current={isOnDashboard ? "page" : undefined}
-                onClick={() => navigate("/dashboard")}
-              >
-                Dashboard
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {navLinks.map((link) => (
+                  <Button
+                    key={link.path}
+                    variant="ghost"
+                    className={cn(
+                      "text-white/70 hover:text-white",
+                      link.active && "text-white font-semibold"
+                    )}
+                    aria-current={link.active ? "page" : undefined}
+                    onClick={() => navigate(link.path)}
+                  >
+                    {link.label}
+                  </Button>
+                ))}
+              </div>
               <Button
                 variant="secondary"
                 className={cn(
@@ -89,10 +104,7 @@ export const Navbar = () => {
           ) : (
             <>
               <Link to="/auth">
-                <Button
-                  variant="ghost"
-                  className="text-white/70 hover:text-white"
-                >
+                <Button variant="ghost" className="text-white/70 hover:text-white">
                   Log in
                 </Button>
               </Link>

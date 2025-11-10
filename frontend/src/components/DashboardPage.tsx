@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import {
+  AlarmClock,
   Brain,
   ChevronRight,
   FileText,
+  MapPin,
   MessageCircle,
   Upload,
 } from "lucide-react";
-import { chatAPI } from "@/services/api";
+import { chatAPI, locationsAPI, memoriesAPI, remindersAPI } from "@/services/api";
 
 interface DocumentSummary {
   id: number;
@@ -18,30 +20,87 @@ interface DocumentSummary {
   created_at: string;
 }
 
+interface ReminderSummary {
+  id: number;
+  title: string;
+  time: string;
+  description?: string;
+}
+
+interface ReminderApiResponse {
+  id: number;
+  title: string;
+  time: string;
+  description?: string;
+}
+
+interface LiveLocationSummary {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+  updated_at: string;
+}
+
 export const DashboardPage = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [memoryCount, setMemoryCount] = useState<number>(0);
+  const [todayReminders, setTodayReminders] = useState<ReminderSummary[]>([]);
+  const [liveLocation, setLiveLocation] = useState<LiveLocationSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const recentDocuments = useMemo(() => documents.slice(0, 4), [documents]);
 
   useEffect(() => {
-    const loadDocuments = async () => {
+    const loadDashboard = async () => {
       try {
         setIsLoading(true);
-        const response = await chatAPI.getDocuments();
-        setDocuments(response.data ?? []);
+        // Format today's date in local timezone to avoid UTC conversion issues
+        const today = new Date();
+        const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+        const [documentsResponse, memoriesResponse, remindersResponse, liveLocationResponse] =
+          await Promise.allSettled([
+            chatAPI.getDocuments(),
+            memoriesAPI.listPhotos(),
+            remindersAPI.listReminders(todayIso),
+            locationsAPI.getLiveLocation(),
+          ]);
+
+        if (documentsResponse.status === "fulfilled") {
+          setDocuments(documentsResponse.value.data ?? []);
+        }
+        if (memoriesResponse.status === "fulfilled") {
+          const data = memoriesResponse.value ?? [];
+          setMemoryCount(Array.isArray(data) ? data.length : 0);
+        }
+        if (remindersResponse.status === "fulfilled") {
+          const data = remindersResponse.value ?? [];
+          const summaries = (Array.isArray(data) ? (data as ReminderApiResponse[]) : []).map(
+            (reminder) => ({
+              id: reminder.id,
+              title: reminder.title,
+              time: reminder.time,
+              description: reminder.description,
+            })
+          );
+          setTodayReminders(summaries);
+        }
+        if (liveLocationResponse.status === "fulfilled") {
+          setLiveLocation(liveLocationResponse.value ?? null);
+        }
+
         setError(null);
       } catch (err) {
-        console.error("Failed to load documents", err);
-        setError("We couldn't load your documents. Please try again shortly.");
+        console.error("Failed to load dashboard", err);
+        setError("We couldn’t load the latest updates. Please try again shortly.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadDocuments();
+    loadDashboard();
   }, []);
 
   return (
@@ -70,7 +129,7 @@ export const DashboardPage = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   size="lg"
                   className="rounded-full px-6"
@@ -90,21 +149,112 @@ export const DashboardPage = () => {
                   <Upload className="mr-2 h-4 w-4" />
                   Add documents
                 </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20"
+                  onClick={() => navigate("/memory-vault")}
+                >
+                  Memory vault
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20"
+                  onClick={() => navigate("/reminders")}
+                >
+                  Reminders
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20"
+                  onClick={() => navigate("/locations")}
+                >
+                  Locations
+                </Button>
               </div>
             </div>
 
             <div className="w-full max-w-xs rounded-2xl border border-white/15 bg-white/10 p-6 text-left backdrop-blur">
-              <p className="text-sm text-white/60">Your library</p>
-              <p className="mt-2 text-4xl font-semibold text-white">
-                {documents.length}
-              </p>
-              <p className="mt-1 text-sm text-white/70">
-                {documents.length === 0
-                  ? "Upload your first PDF to give the assistant something to remember."
-                  : "PDFs ready to power warm, confident answers."}
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-white/60">Knowledge base</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">
+                    {documents.length} document{documents.length === 1 ? "" : "s"}
+                  </p>
+                  <p className="text-xs text-white/60">
+                    {documents.length === 0
+                      ? "Upload your first PDF to give the assistant something to remember."
+                      : "Ready to support personalised answers."}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/10 p-3">
+                  <p className="text-xs text-white/60">Memories saved</p>
+                  <p className="text-xl font-semibold text-white">{memoryCount}</p>
+                  <p className="text-xs text-white/50">
+                    Keep adding faces and notes to make recognition effortless.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="grid gap-4 md:grid-cols-3"
+        >
+          <Card
+            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
+            onClick={() => navigate("/memory-vault")}
+          >
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white/70">Memory Vault</span>
+                <Brain className="h-4 w-4 text-[#E02478]" />
+              </div>
+              <p className="text-3xl font-semibold text-white">{memoryCount}</p>
+              <p className="text-xs text-white/60">
+                Memories saved with faces and stories for quick recall.
+              </p>
+            </CardContent>
+          </Card>
+          <Card
+            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
+            onClick={() => navigate("/reminders")}
+          >
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white/70">Today</span>
+                <AlarmClock className="h-4 w-4 text-[#E02478]" />
+              </div>
+              <p className="text-3xl font-semibold text-white">{todayReminders.length}</p>
+              <p className="text-xs text-white/60">
+                {todayReminders.length
+                  ? `Next: ${todayReminders[0].title} at ${todayReminders[0].time.slice(0, 5)}`
+                  : "No reminders scheduled for today."}
+              </p>
+            </CardContent>
+          </Card>
+          <Card
+            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
+            onClick={() => navigate("/locations")}
+          >
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white/70">Live location</span>
+                <MapPin className="h-4 w-4 text-[#E02478]" />
+              </div>
+              <p className="text-3xl font-semibold text-white">
+                {liveLocation ? "Active" : "Waiting"}
+              </p>
+              <p className="text-xs text-white/60">
+                {liveLocation
+                  ? `Updated ${new Date(liveLocation.updated_at).toLocaleTimeString()}`
+                  : "Enable location sharing to see updates here."}
+              </p>
+            </CardContent>
+          </Card>
         </motion.section>
 
         <motion.section

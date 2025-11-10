@@ -115,7 +115,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
   return (
     <div className={`space-y-8 ${className}`}>
-      <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur">
+      <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">Upload a document</h3>
@@ -187,7 +187,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur">
+      <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wide text-white/70">

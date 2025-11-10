@@ -109,8 +109,8 @@ const ChatPage: React.FC = () => {
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur"
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl backdrop-blur-sm"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
@@ -195,7 +195,7 @@ const ChatPage: React.FC = () => {
               </div>
             ) : null}
 
-            <div className="max-w-5xl rounded-2xl border border-white/15 bg-black/30 p-2 backdrop-blur">
+            <div className="max-w-5xl rounded-2xl border border-white/15 bg-black/30 p-2 backdrop-blur-sm">
               <div className="h-[620px]">
                 <ChatBot
                   onSendMessage={handleSendMessage}
@@ -213,7 +213,7 @@ const ChatPage: React.FC = () => {
               onDelete={handleDeleteDocument}
               onInitializeDemo={handleInitializeDemo}
               isUploading={isUploading}
-              className="rounded-2xl border border-white/15 bg-black/30 p-6 backdrop-blur"
+              className="rounded-2xl border border-white/15 bg-black/30 p-6 backdrop-blur-sm"
             />
           </TabsContent>
         </Tabs>

@@ -14,6 +14,7 @@ import MemoryVaultPage from "./components/MemoryVaultPage";
 import RemindersPage from "./components/RemindersPage";
 import LocationsPage from "./components/LocationsPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
+        <Toaster />
       </Router>
     </AuthProvider>
   );

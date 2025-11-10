@@ -85,25 +85,25 @@ export const AuthPage = ({ type }: AuthPageProps) => {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-20">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md"
       >
-        <Card className="backdrop-blur-xl">
+        <Card className="backdrop-blur-xl border-white/10 bg-black/40 shadow-xl">
           <CardHeader className="text-center space-y-4">
             <motion.div
               className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, rotate: 5 }}
               transition={{ duration: 0.2 }}
             >
               <Heart className="h-8 w-8 text-[#E02478]" />
             </motion.div>
             <div>
-              <CardTitle className="text-2xl">
+              <CardTitle className="text-2xl md:text-3xl">
                 {showLogin ? "Welcome Back" : "Join Moments"}
               </CardTitle>
-              <CardDescription className="text-white/70 mt-2">
+              <CardDescription className="text-white/70 mt-2 leading-relaxed">
                 {showLogin
                   ? "Sign in to continue your journey with loved ones"
                   : "Create your account to start building meaningful connections"}
@@ -116,11 +116,11 @@ export const AuthPage = ({ type }: AuthPageProps) => {
               {/* Show error message if login/register fails */}
               {errors.submit && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-3 bg-red-500/20 border border-red-500/50 rounded-md"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg backdrop-blur-sm"
                 >
-                  <p className="text-sm text-red-400">{errors.submit}</p>
+                  <p className="text-sm text-red-200">{errors.submit}</p>
                 </motion.div>
               )}
 
@@ -232,7 +232,7 @@ export const AuthPage = ({ type }: AuthPageProps) => {
                   : "Already have an account? "}
                 <button
                   onClick={() => setShowLogin(!showLogin)}
-                  className="text-[#E02478] hover:underline font-medium"
+                  className="text-[#E02478] hover:underline font-medium transition-colors"
                   disabled={isLoading}
                 >
                   {showLogin ? "Sign up" : "Sign in"}

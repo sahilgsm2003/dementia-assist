@@ -43,17 +43,21 @@ export const Navbar = () => {
         backdropFilter: "blur(16px)",
         borderBottom: border,
       }}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 group">
           <motion.span
             className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]"
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.96 }}
+            transition={{ duration: 0.2 }}
           >
             <Heart className="h-5 w-5" />
           </motion.span>
-          <span className="text-xl font-semibold tracking-tight text-white">
+          <span className="text-xl font-semibold tracking-tight text-white group-hover:text-[#E02478] transition-colors">
             Moments
           </span>
         </Link>
@@ -61,14 +65,14 @@ export const Navbar = () => {
         <div className="flex items-center gap-3 text-sm">
           {isAuthenticated ? (
             <>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 {navLinks.map((link) => (
                   <Button
                     key={link.path}
                     variant="ghost"
                     className={cn(
-                      "text-white/70 hover:text-white",
-                      link.active && "text-white font-semibold"
+                      "text-white/70 hover:text-white transition-colors",
+                      link.active && "text-white font-semibold bg-white/5"
                     )}
                     aria-current={link.active ? "page" : undefined}
                     onClick={() => navigate(link.path)}
@@ -80,9 +84,9 @@ export const Navbar = () => {
               <Button
                 variant="secondary"
                 className={cn(
-                  "hidden sm:inline-flex items-center gap-2 border border-white/10 bg-white/5 text-white hover:bg-white/10",
+                  "hidden sm:inline-flex items-center gap-2",
                   isOnAssistant &&
-                    "border-transparent bg-[#E02478] text-white shadow-lg shadow-[#E02478]/30 hover:bg-[#E02478]/85"
+                    "bg-[#E02478] text-white shadow-lg shadow-[#E02478]/30 hover:bg-[#E02478]/85"
                 )}
                 aria-current={isOnAssistant ? "page" : undefined}
                 onClick={() => navigate("/chatbot")}
@@ -92,7 +96,6 @@ export const Navbar = () => {
               </Button>
               <Button
                 variant="outline"
-                className="border-white/15 text-white hover:bg-white/10"
                 onClick={() => {
                   logout();
                   navigate("/");

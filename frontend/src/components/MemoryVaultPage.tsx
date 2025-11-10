@@ -135,7 +135,7 @@ export const MemoryVaultPage = () => {
         </TabsList>
 
         <TabsContent value="create">
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <ImagePlus className="h-5 w-5 text-[#E02478]" />
@@ -205,7 +205,7 @@ export const MemoryVaultPage = () => {
         </TabsContent>
 
         <TabsContent value="search">
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Search className="h-5 w-5 text-[#E02478]" />
@@ -299,7 +299,7 @@ export const MemoryVaultPage = () => {
         </TabsContent>
 
         <TabsContent value="gallery">
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-white">Saved memories</CardTitle>
               <Button
@@ -320,9 +320,13 @@ export const MemoryVaultPage = () => {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {memories.map((memory) => (
-                    <div
+                    <motion.div
                       key={memory.id}
-                      className="overflow-hidden rounded-2xl border border-white/10 bg-black/30"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ y: -4 }}
+                      className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 transition-all duration-300 hover:border-white/20"
                     >
                       <img
                         src={memory.image_url}
@@ -337,7 +341,7 @@ export const MemoryVaultPage = () => {
                           Saved {new Date(memory.created_at).toLocaleString()}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                   {!memories.length && (
                     <div className="col-span-full flex h-32 items-center justify-center rounded-xl border border-dashed border-white/15 bg-black/20 text-sm text-white/60">

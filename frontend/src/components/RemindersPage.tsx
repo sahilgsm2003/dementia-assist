@@ -175,7 +175,7 @@ export const RemindersPage = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <Card className="border-white/10 bg-white/5 backdrop-blur">
+        <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white">Select a date</CardTitle>
           </CardHeader>
@@ -241,7 +241,7 @@ export const RemindersPage = () => {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <PlusCircle className="h-5 w-5 text-[#E02478]" />
@@ -335,7 +335,7 @@ export const RemindersPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <CalendarIcon className="h-5 w-5 text-[#E02478]" />

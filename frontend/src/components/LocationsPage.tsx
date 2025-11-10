@@ -250,7 +250,7 @@ export const LocationsPage = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-        <Card className="border-white/10 bg-white/5 backdrop-blur">
+        <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Navigation className="h-5 w-5 text-[#E02478]" />
@@ -337,7 +337,7 @@ export const LocationsPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-white/5 backdrop-blur">
+        <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <CardTitle className="flex items-center gap-2 text-white">
               <Globe className="h-5 w-5 text-[#E02478]" />

@@ -201,13 +201,17 @@ export const DashboardPage = () => {
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="grid gap-4 md:grid-cols-3"
         >
-          <Card
-            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
-            onClick={() => navigate("/memory-vault")}
+          <motion.div
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
           >
+            <Card
+              className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+              onClick={() => navigate("/memory-vault")}
+            >
             <CardContent className="space-y-2 p-6">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white/70">Memory Vault</span>
@@ -219,8 +223,13 @@ export const DashboardPage = () => {
               </p>
             </CardContent>
           </Card>
+          </motion.div>
+          <motion.div
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+          >
           <Card
-            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
+            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
             onClick={() => navigate("/reminders")}
           >
             <CardContent className="space-y-2 p-6">
@@ -236,8 +245,13 @@ export const DashboardPage = () => {
               </p>
             </CardContent>
           </Card>
+          </motion.div>
+          <motion.div
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+          >
           <Card
-            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur transition hover:border-white/20 hover:bg-white/10"
+            className="cursor-pointer border-white/10 bg-white/5 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/10"
             onClick={() => navigate("/locations")}
           >
             <CardContent className="space-y-2 p-6">
@@ -255,15 +269,16 @@ export const DashboardPage = () => {
               </p>
             </CardContent>
           </Card>
+          </motion.div>
         </motion.section>
 
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.05 }}
+          transition={{ duration: 0.55, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           className="grid gap-6 lg:grid-cols-[2fr,1fr]"
         >
-          <Card className="border-white/10 bg-white/5 backdrop-blur">
+          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
                 <CardTitle className="text-xl font-semibold text-white">
@@ -309,7 +324,7 @@ export const DashboardPage = () => {
                   {recentDocuments.map((doc) => (
                     <li
                       key={doc.id}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-colors hover:bg-black/40"
+                      className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-all duration-300 hover:bg-black/40 hover:border-white/15"
                     >
                       <div className="flex items-start gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E02478]/15 text-[#E02478]">
@@ -331,7 +346,7 @@ export const DashboardPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-black/40 backdrop-blur">
+          <Card className="border-white/10 bg-black/40 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-white">
                 Quick next steps

@@ -14,6 +14,9 @@ class VectorService:
         # Configure Google Gemini
         if settings.GEMINI_API_KEY:
             genai.configure(api_key=settings.GEMINI_API_KEY)
+            # Log which key is being used (first 10 chars for security)
+            key_preview = settings.GEMINI_API_KEY[:10] + "..." if len(settings.GEMINI_API_KEY) > 10 else "***"
+            print(f"VectorService: Gemini API configured with key: {key_preview}")
         else:
             print("Warning: GEMINI_API_KEY not set in configuration")
         

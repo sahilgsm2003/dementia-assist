@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Users, MapPin, Info, ChevronRight } from "lucide-react";
 import { memoriesAPI, locationsAPI, emergencyAPI } from "@/services/api";
 import { useEffect, useState } from "react";
-import { QuickFactsCard } from "@/components/shared/QuickFactsCard";
 
 interface QuickAccessCardsProps {
   className?: string;
@@ -150,9 +149,6 @@ export const QuickAccessCards = ({ className }: QuickAccessCardsProps) => {
           </Card>
         </motion.div>
       </div>
-
-      {/* Quick Facts Card */}
-      <QuickFactsCard compact />
     </motion.section>
   );
 };

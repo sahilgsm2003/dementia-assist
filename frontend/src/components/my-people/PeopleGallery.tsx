@@ -1,4 +1,11 @@
+import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonGrid } from "@/components/shared/SkeletonGrid";
+import { PersonCard } from "./PersonCard";
+import { memoriesAPI } from "@/services/api";
 
 interface MemoryPhoto {
   id: number;

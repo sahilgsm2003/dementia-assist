@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { ExportDialog } from "@/components/shared/ExportDialog";
+import { emergencyAPI } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface EmergencyInfo {
   name: string;
@@ -357,15 +360,10 @@ export const EmergencyInfoPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-red-500/50 bg-red-500/10 backdrop-blur-sm print:border-2 print:border-red-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Shield className="h-5 w-5 text-red-400" />
-              Emergency Card
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+      <div className="max-w-4xl">
+        {/* Emergency Information Display */}
+        <Card className="border-white/10 bg-white/5 backdrop-blur-sm mb-6">
+          <CardContent className="p-6 space-y-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
                 My Name
@@ -444,15 +442,16 @@ export const EmergencyInfoPage = () => {
                 <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
                   Primary Doctor
                 </p>
-                <div className="p-3 rounded-lg bg-black/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/30">
                   <p className="text-sm font-medium text-white">
                     {emergencyInfo.doctorName}
                   </p>
                   {emergencyInfo.doctorPhone && (
                     <a
                       href={`tel:${emergencyInfo.doctorPhone}`}
-                      className="text-sm text-white/70 hover:text-white"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors font-medium"
                     >
+                      <Phone className="h-4 w-4" />
                       {emergencyInfo.doctorPhone}
                     </a>
                   )}
@@ -474,50 +473,29 @@ export const EmergencyInfoPage = () => {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white">Quick Access</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handlePrint}
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Print Emergency Card
-              </Button>
-              <p className="text-xs text-white/60">
-                Print this card and keep it in your wallet or purse for easy
-                access in emergencies.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-yellow-500/50 bg-yellow-500/10 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-yellow-200">
-                <AlertCircle className="h-5 w-5" />
-                Important Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-yellow-100/90">
-              <p>
-                • Keep this information updated and easily accessible
-              </p>
-              <p>
-                • Share with family members and caregivers
-              </p>
-              <p>
-                • Consider printing a wallet-sized version
-              </p>
-              <p>
-                • Update medications and conditions regularly
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Important Notes */}
+        <Card className="border-yellow-500/50 bg-yellow-500/10 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-200">
+              <AlertCircle className="h-5 w-5" />
+              Important Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-yellow-100/90">
+            <p>
+              • Keep this information updated and easily accessible
+            </p>
+            <p>
+              • Share with family members and caregivers
+            </p>
+            <p>
+              • Consider printing a wallet-sized version
+            </p>
+            <p>
+              • Update medications and conditions regularly
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

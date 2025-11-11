@@ -75,55 +75,111 @@ export const exportToPDF = async (
 export const exportEmergencyCard = async (emergencyData: any): Promise<void> => {
   // Create a temporary div with emergency card content
   const div = document.createElement("div");
-  div.style.width = "85.6mm"; // Standard credit card width
-  div.style.height = "53.98mm"; // Standard credit card height
-  div.style.padding = "10mm";
+  div.style.width = "210mm"; // A4 width for better readability
+  div.style.padding = "20mm";
   div.style.backgroundColor = "#ffffff";
   div.style.color = "#000000";
   div.style.fontFamily = "Arial, sans-serif";
-  div.style.fontSize = "12px";
+  div.style.fontSize = "14px";
+  div.style.lineHeight = "1.6";
   div.style.position = "absolute";
   div.style.left = "-9999px";
+  div.style.top = "0";
+
+  // Build emergency contacts HTML
+  const contactsHtml = emergencyData.emergency_contacts?.length > 0
+    ? emergencyData.emergency_contacts.map((contact: any) => 
+        `<div style="margin-bottom: 6px;">
+          <strong>${contact.name || "N/A"}</strong> (${contact.relationship || "N/A"}): <strong>${contact.phone || "N/A"}</strong>
+        </div>`
+      ).join("")
+    : '<div style="margin-bottom: 6px;">No emergency contacts listed</div>';
 
   div.innerHTML = `
-    <div style="text-align: center; margin-bottom: 10px;">
-      <h2 style="margin: 0; font-size: 18px; font-weight: bold;">EMERGENCY INFORMATION</h2>
+    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">EMERGENCY INFORMATION</h1>
     </div>
-    <div style="margin-bottom: 8px;">
-      <strong>Name:</strong> ${emergencyData.person_name || "N/A"}
+    <div style="margin-bottom: 15px;">
+      <strong style="font-size: 16px;">Name:</strong> <span style="font-size: 16px;">${emergencyData.person_name || "N/A"}</span>
     </div>
-    ${emergencyData.emergency_contacts?.length > 0 ? `
-      <div style="margin-bottom: 8px;">
-        <strong>Emergency Contacts:</strong><br/>
-        ${emergencyData.emergency_contacts.map((contact: any) => 
-          `${contact.name} (${contact.relationship}): ${contact.phone}`
-        ).join("<br/>")}
-      </div>
-    ` : ""}
+    <div style="margin-bottom: 15px;">
+      <strong style="font-size: 16px; display: block; margin-bottom: 8px;">Emergency Contacts:</strong>
+      ${contactsHtml}
+    </div>
     ${emergencyData.medical_conditions ? `
-      <div style="margin-bottom: 8px;">
-        <strong>Medical Conditions:</strong> ${emergencyData.medical_conditions}
+      <div style="margin-bottom: 15px;">
+        <strong style="font-size: 16px;">Medical Conditions:</strong> <span style="font-size: 14px;">${emergencyData.medical_conditions}</span>
       </div>
     ` : ""}
     ${emergencyData.allergies ? `
-      <div style="margin-bottom: 8px;">
-        <strong>Allergies:</strong> ${emergencyData.allergies}
+      <div style="margin-bottom: 15px; padding: 8px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
+        <strong style="font-size: 16px; color: #856404;">Allergies:</strong> <span style="font-size: 14px; color: #856404; font-weight: bold;">${emergencyData.allergies}</span>
+      </div>
+    ` : ""}
+    ${emergencyData.medications ? `
+      <div style="margin-bottom: 15px;">
+        <strong style="font-size: 16px;">Medications:</strong> <span style="font-size: 14px;">${emergencyData.medications}</span>
       </div>
     ` : ""}
     ${emergencyData.doctor_name ? `
-      <div style="margin-bottom: 8px;">
-        <strong>Doctor:</strong> ${emergencyData.doctor_name} ${emergencyData.doctor_phone ? `(${emergencyData.doctor_phone})` : ""}
+      <div style="margin-bottom: 15px;">
+        <strong style="font-size: 16px;">Primary Doctor:</strong> <span style="font-size: 14px;">${emergencyData.doctor_name}</span>
+        ${emergencyData.doctor_phone ? ` <strong style="font-size: 14px;">(${emergencyData.doctor_phone})</strong>` : ""}
       </div>
     ` : ""}
+    ${emergencyData.home_address ? `
+      <div style="margin-bottom: 15px;">
+        <strong style="font-size: 16px;">Home Address:</strong> <span style="font-size: 14px;">${emergencyData.home_address}</span>
+      </div>
+    ` : ""}
+    <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+      Generated on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+    </div>
   `;
 
   document.body.appendChild(div);
 
   try {
-    await exportToPDF(div, "emergency-card.pdf", {
-      format: [85.6, 53.98], // Wallet size
-      orientation: "landscape",
+    // Use html2canvas with better options for text rendering
+    const canvas = await html2canvas(div, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      onclone: (clonedDoc) => {
+        // Ensure fonts are loaded
+        const clonedDiv = clonedDoc.querySelector("div") as HTMLElement;
+        if (clonedDiv) {
+          clonedDiv.style.fontFamily = "Arial, sans-serif";
+        }
+      },
     });
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const imgWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // Add first page
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Add additional pages if needed
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save("emergency-information.pdf");
   } finally {
     document.body.removeChild(div);
   }

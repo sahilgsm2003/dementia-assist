@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ExportDialog } from "@/components/shared/ExportDialog";
+import { memoriesAPI } from "@/services/api";
+import { MemoryCollections } from "./MemoryCollections";
+import { AddMemoryForm } from "./AddMemoryForm";
 
 interface MemoryPhoto {
   id: number;
@@ -197,7 +200,7 @@ export const MyMemoriesPage = () => {
           />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };
-

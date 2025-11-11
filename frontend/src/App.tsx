@@ -7,29 +7,28 @@ import {
 } from "react-router-dom";
 import { useEffect, Suspense } from "react";
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { Layout } from "./components/Layout";
 import { Toaster } from "./components/ui/toaster";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { ReminderNotificationHandler } from "./components/shared/ReminderNotificationHandler";
+import { NotificationBanner } from "./components/shared/NotificationBanner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PageLoader } from "./components/lazy";
 import {
-  LandingPage,
-  AuthPage,
-  HomePage,
-  AskMomentsPage,
-  MyPeoplePage,
-  PersonDetailPage,
-  MyMemoriesPage,
-  MemoryDetailPage,
-  MyDayPage,
-  MyPlacesPage,
-  PlaceDetailPage,
-  OnboardingFlow,
-  EmergencyInfoPage,
-  FamilySharingPage,
-  MedicationsPage,
-} from "./components/lazy";
+    LandingPage,
+    AuthPage,
+    HomePage,
+    AskMomentsPage,
+    MyPeoplePage,
+    PersonDetailPage,
+    MyDayPage,
+    MyPlacesPage,
+    PlaceDetailPage,
+    OnboardingFlow,
+    EmergencyInfoPage,
+    FamilySharingPage,
+    MedicationsPage,
+  } from "./components/lazy";
 import { setNavigate } from "./lib/navigation";
 
 function AppRoutes() {
@@ -127,26 +126,6 @@ function AppRoutes() {
             <ProtectedRoute>
               <Suspense fallback={<PageLoader />}>
                 <AskMomentsPage />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-memories"
-          element={
-            <ProtectedRoute>
-              <Suspense fallback={<PageLoader />}>
-                <MyMemoriesPage />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-memories/:memoryId"
-          element={
-            <ProtectedRoute>
-              <Suspense fallback={<PageLoader />}>
-                <MemoryDetailPage />
               </Suspense>
             </ProtectedRoute>
           }
@@ -268,11 +247,13 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-          <Toaster />
-        </Router>
-        <ReminderNotificationHandler />
+        <NotificationProvider>
+          <Router>
+            <AppRoutes />
+            <Toaster />
+            <NotificationBanner />
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

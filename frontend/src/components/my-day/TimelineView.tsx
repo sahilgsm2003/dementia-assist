@@ -1,4 +1,8 @@
+import { motion } from "framer-motion";
+import { Calendar, Sun, Sunset, Moon } from "lucide-react";
 import { SkeletonList } from "@/components/shared/SkeletonList";
+import { formatLocalDate, formatDate } from "@/lib/dateUtils";
+import { DaySection } from "./DaySection";
 
 interface Reminder {
   id: number;
@@ -72,28 +76,28 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Day Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">{todayDisplay}</h2>
-            <p className="text-sm text-white/70 mt-1">
-              {totalReminders} {totalReminders === 1 ? "reminder" : "reminders"} scheduled
-            </p>
-          </div>
-          {totalReminders > 0 && (
+      {totalReminders > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-1">{todayDisplay}</h2>
+              <p className="text-sm text-white/70">
+                {totalReminders} {totalReminders === 1 ? "reminder" : "reminders"} scheduled
+              </p>
+            </div>
             <div className="text-right">
-              <p className="text-sm text-white/70">Progress</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm text-white/70 mb-1">Progress</p>
+              <p className="text-2xl font-bold text-white mb-2">
                 {completedReminders}/{totalReminders}
               </p>
-              <div className="mt-2 h-2 w-32 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 w-32 bg-white/10 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
@@ -102,12 +106,12 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
                 />
               </div>
             </div>
-          )}
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Timeline */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Morning Section */}
         <DaySection
           title="Morning"
@@ -148,13 +152,17 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center py-12"
+          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-12 text-center"
         >
-          <Calendar className="h-16 w-16 text-white/30 mx-auto mb-4" />
-          <p className="text-white/70 text-lg mb-2">No reminders scheduled for today</p>
-          <p className="text-sm text-white/50">
-            Add reminders to organize your day and stay on track
-          </p>
+          <div className="flex flex-col items-center justify-center">
+            <div className="mb-6 rounded-full bg-white/5 p-6">
+              <Calendar className="h-16 w-16 text-white/30" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No reminders scheduled for today</h3>
+            <p className="text-sm text-white/50 max-w-md">
+              Add reminders to organize your day and stay on track throughout the day.
+            </p>
+          </div>
         </motion.div>
       )}
     </div>

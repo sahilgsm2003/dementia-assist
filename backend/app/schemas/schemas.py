@@ -1,7 +1,8 @@
+import datetime as dt
 from datetime import date, datetime, time
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 
 class UserBase(BaseModel):
@@ -93,11 +94,67 @@ class MemoryPhotoMatch(BaseModel):
 class ReminderBase(BaseModel):
     title: str
     description: Optional[str] = None
-    date: Optional[date] = None
-    time: Optional[time] = None
+    date: Optional[dt.date] = None
+    time: Optional[dt.time] = None
     notification_sound: Optional[str] = None
     reminder_type: str = "time"  # time, location, activity, weather, context
     trigger_conditions: Optional[dict] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_reminder_fields(cls, data):
+        """
+        Validate reminder fields based on the reminder_type.
+        - For "time" reminders, 'date' and 'time' are required.
+        - For other types, 'date' and 'time' must not be provided.
+        """
+        if isinstance(data, dict):
+            reminder_type = data.get('reminder_type', 'time')
+
+            if reminder_type == 'time':
+                if not data.get('date') or not data.get('time'):
+                    raise ValueError("For 'time' reminders, both date and time are required.")
+            else:
+                if data.get('date') is not None or data.get('time') is not None:
+                    raise ValueError("Date and time should not be specified for this reminder type.")
+        return data
+
+    @field_validator('date', mode='before')
+    @classmethod
+    def parse_date(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, date):
+            return v
+        if isinstance(v, str):
+            try:
+                return datetime.strptime(v, '%Y-%m-%d').date()
+            except ValueError:
+                try:
+                    return datetime.fromisoformat(v).date()
+                except (ValueError, AttributeError):
+                    raise ValueError(f"Invalid date format: {v}")
+        return v
+
+    @field_validator('time', mode='before')
+    @classmethod
+    def parse_time(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, time):
+            return v
+        if isinstance(v, str):
+            try:
+                parts = v.split(':')
+                if len(parts) == 2:
+                    return time(int(parts[0]), int(parts[1]), 0)
+                elif len(parts) == 3:
+                    return time(int(parts[0]), int(parts[1]), int(parts[2]))
+                else:
+                    raise ValueError(f"Invalid time format: {v}")
+            except (ValueError, IndexError) as e:
+                raise ValueError(f"Invalid time format: {v}") from e
+        return v
 
 
 class ReminderCreate(ReminderBase):
@@ -107,11 +164,50 @@ class ReminderCreate(ReminderBase):
 class ReminderUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    date: Optional[date] = None
-    time: Optional[time] = None
+    date: Optional[dt.date] = None
+    time: Optional[dt.time] = None
     notification_sound: Optional[str] = None
     reminder_type: Optional[str] = None
     trigger_conditions: Optional[dict] = None
+
+    @field_validator('date', mode='before')
+    @classmethod
+    def parse_date(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, date):
+            return v
+        if isinstance(v, str):
+            try:
+                # Parse ISO format date string YYYY-MM-DD
+                return datetime.strptime(v, '%Y-%m-%d').date()
+            except ValueError:
+                try:
+                    return datetime.fromisoformat(v).date()
+                except (ValueError, AttributeError):
+                    raise ValueError(f"Invalid date format: {v}")
+        raise ValueError(f"Invalid date type: {type(v)}")
+
+    @field_validator('time', mode='before')
+    @classmethod
+    def parse_time(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, time):
+            return v
+        if isinstance(v, str):
+            try:
+                # Parse time string in format HH:MM:SS or HH:MM
+                parts = v.split(':')
+                if len(parts) == 2:
+                    return time(int(parts[0]), int(parts[1]), 0)
+                elif len(parts) == 3:
+                    return time(int(parts[0]), int(parts[1]), int(parts[2]))
+                else:
+                    raise ValueError(f"Invalid time format: {v}")
+            except (ValueError, IndexError):
+                raise ValueError(f"Invalid time format: {v}")
+        raise ValueError(f"Invalid time type: {type(v)}")
 
 
 class Reminder(ReminderBase):
@@ -196,7 +292,7 @@ class MedicationUpdate(BaseModel):
     name: Optional[str] = None
     dosage: Optional[str] = None
     frequency: Optional[str] = None
-    time: Optional[time] = None
+    time: Optional[dt.time] = None
     times: Optional[List[str]] = None
     purpose: Optional[str] = None
     doctor_name: Optional[str] = None
@@ -214,7 +310,7 @@ class Medication(MedicationBase):
 
 class MedicationTrack(BaseModel):
     taken: bool
-    date: Optional[date] = None
+    date: Optional[dt.date] = None
 
 
 # Emergency Info schemas

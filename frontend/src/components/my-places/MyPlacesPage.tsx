@@ -140,6 +140,7 @@ export const MyPlacesPage = () => {
             liveLocation={liveLocation}
             onDelete={handlePlaceDeleted}
             isLoading={isLoading}
+            onLocationUpdate={loadData}
           />
         </TabsContent>
 

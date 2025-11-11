@@ -14,8 +14,6 @@ import {
   User,
   Shield,
   Users,
-  Calendar,
-  MapPin,
   CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -48,23 +46,9 @@ interface OnboardingData {
     relationship: string;
     photo: File | null;
   }>;
-
-  // Step 4: Daily Routines
-  routines: {
-    morning: Array<{ time: string; activity: string }>;
-    afternoon: Array<{ time: string; activity: string }>;
-    evening: Array<{ time: string; activity: string }>;
-  };
-
-  // Step 5: Important Places
-  places: Array<{
-    name: string;
-    address: string;
-    description: string;
-  }>;
 }
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 4;
 
 export const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -82,12 +66,6 @@ export const OnboardingFlow = () => {
     doctorPhone: "",
     homeAddress: "",
     importantPeople: [],
-    routines: {
-      morning: [],
-      afternoon: [],
-      evening: [],
-    },
-    places: [],
   });
 
   const progress = (currentStep / TOTAL_STEPS) * 100;
@@ -200,19 +178,7 @@ export const OnboardingFlow = () => {
                   />
                 )}
                 {currentStep === 4 && (
-                  <Step4Routines
-                    data={onboardingData}
-                    setData={setOnboardingData}
-                  />
-                )}
-                {currentStep === 5 && (
-                  <Step5Places
-                    data={onboardingData}
-                    setData={setOnboardingData}
-                  />
-                )}
-                {currentStep === 6 && (
-                  <Step6Complete data={onboardingData} />
+                  <Step4Complete data={onboardingData} />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -620,120 +586,25 @@ const Step3People = ({
   );
 };
 
-// Step 4: Daily Routines
-const Step4Routines = ({
-  data,
-  setData,
-}: {
-  data: OnboardingData;
-  setData: (data: OnboardingData) => void;
-}) => {
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2 mb-6">
-        <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center mb-4">
-          <Calendar className="h-8 w-8 text-[#E02478]" />
-        </div>
-        <h3 className="text-xl font-semibold text-white">Daily Routines</h3>
-        <p className="text-sm text-white/70">
-          Structure helps with memory. Add daily routines (you can add more
-          later).
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="p-4 border border-white/10 rounded-lg">
-          <p className="text-sm text-white/70 mb-4">
-            Routines can be added later from the "My Day" section. For now,
-            you're all set!
-          </p>
-          <p className="text-xs text-white/50">
-            You'll be able to create morning, afternoon, and evening routines
-            with specific times and activities.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Step 5: Important Places
-const Step5Places = ({
-  data,
-  setData,
-}: {
-  data: OnboardingData;
-  setData: (data: OnboardingData) => void;
-}) => {
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2 mb-6">
-        <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center mb-4">
-          <MapPin className="h-8 w-8 text-[#E02478]" />
-        </div>
-        <h3 className="text-xl font-semibold text-white">Important Places</h3>
-        <p className="text-sm text-white/70">
-          Add frequently visited places for safety and orientation.
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="p-4 border border-white/10 rounded-lg">
-          <p className="text-sm text-white/70 mb-4">
-            Places can be added later from the "My Places" section. For now,
-            you're all set!
-          </p>
-          <p className="text-xs text-white/50">
-            You'll be able to add home address, doctor's office, pharmacy, and
-            other important locations.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Step 6: Complete
-const Step6Complete = ({ data }: { data: OnboardingData }) => {
+// Step 4: Complete
+const Step4Complete = ({ data }: { data: OnboardingData }) => {
   return (
     <div className="space-y-6 text-center">
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        className="mx-auto w-20 h-20 bg-[#E02478]/20 rounded-full flex items-center justify-center mb-6"
-      >
-        <CheckCircle2 className="h-10 w-10 text-[#E02478]" />
-      </motion.div>
-
-      <div className="space-y-4">
-        <h3 className="text-2xl font-semibold text-white">
+      <div className="text-center space-y-2 mb-6">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center mb-4"
+        >
+          <CheckCircle2 className="h-8 w-8 text-[#E02478]" />
+        </motion.div>
+        <h3 className="text-xl font-semibold text-white">
           You're all set!
         </h3>
-        <p className="text-sm text-white/70 max-w-md mx-auto">
-          Moments is ready to help {data.personName || "your loved one"}{" "}
-          remember what matters most. You can always add more information later.
+        <p className="text-sm text-white/70">
+          Moments is ready to help {data.personName || "your loved one"} remember what matters most.
         </p>
-      </div>
-
-      <div className="pt-6 space-y-3">
-        <p className="text-sm font-medium text-white/80">
-          Here's what you can do next:
-        </p>
-        <ul className="text-sm text-white/70 space-y-2 text-left max-w-sm mx-auto">
-          <li className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[#E02478] flex-shrink-0" />
-            <span>Add more people and memories</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[#E02478] flex-shrink-0" />
-            <span>Set up daily routines and reminders</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[#E02478] flex-shrink-0" />
-            <span>Start asking questions with the assistant</span>
-          </li>
-        </ul>
       </div>
     </div>
   );

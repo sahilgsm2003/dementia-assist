@@ -51,14 +51,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const user = auth.user;
   const userId = user && typeof user === "object" && "id" in user ? user.id : undefined;
 
-  // Use chat history hook
+  // Use chat history hook (no persistence - refreshes every time)
   const {
     messages,
-    isLoading: isLoadingHistory,
     addMessage,
     addMessages,
     updateMessage,
   } = useChatHistory(userId);
+
+  // Track if welcome message has been added
+  const welcomeMessageAddedRef = useRef(false);
 
   // Get user name for personalization
   let userName = "there";
@@ -79,9 +81,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return `${getGreeting()}, ${userName}! I'm Moments, your personal memory assistant. I'm here to help you remember important details from your life.\n\nI can help you with questions about:\n• Family members and relationships\n• Important dates and celebrations\n• Health information and medications\n• Daily routines and schedule\n• Where you live and important places\n\nWhat would you like to know today?`;
   };
 
-  // Add welcome message if no messages exist
+  // Add welcome message if no messages exist (only once)
   useEffect(() => {
-    if (!isLoadingHistory && messages.length === 0) {
+    // Check if welcome message already exists
+    const hasWelcomeMessage = messages.some((msg) => msg.id === "welcome-1");
+    
+    // Only add welcome message if:
+    // 1. No messages exist
+    // 2. We haven't already added a welcome message in this session
+    // 3. No welcome message exists in the current messages
+    if (
+      messages.length === 0 &&
+      !welcomeMessageAddedRef.current &&
+      !hasWelcomeMessage
+    ) {
+      welcomeMessageAddedRef.current = true; // Set ref BEFORE adding message to prevent race conditions
       const welcomeMessage: ChatMessage = {
         id: "welcome-1",
         type: "bot",
@@ -90,11 +104,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       };
       addMessage(welcomeMessage);
     }
-  }, [isLoadingHistory, messages.length, hasKnowledgeBase, userName, addMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]); // Only depend on messages.length, not addMessage
 
   // Handle initial question from navigation state
   useEffect(() => {
-    if (initialQuestion && !isLoadingHistory && messages.length > 0) {
+    if (initialQuestion && messages.length > 0) {
       // Only auto-send if we just loaded and have welcome message
       const hasWelcomeOnly = messages.length === 1 && messages[0].id === "welcome-1";
       if (hasWelcomeOnly) {
@@ -104,11 +119,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return () => clearTimeout(timer);
       }
     }
-  }, [initialQuestion, isLoadingHistory, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialQuestion, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   // Update showSuggestions based on message count

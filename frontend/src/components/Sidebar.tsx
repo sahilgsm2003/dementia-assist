@@ -4,7 +4,6 @@ import {
   Calendar, 
   Users, 
   MessageCircle, 
-  Images, 
   MapPin,
   Shield,
   Pill,
@@ -22,7 +21,6 @@ const mainNavItems = [
   { icon: Calendar, label: "My Day", path: "/my-day" },
   { icon: Users, label: "My People", path: "/my-people" },
   { icon: MessageCircle, label: "Ask Moments", path: "/ask-moments" },
-  { icon: Images, label: "My Memories", path: "/my-memories" },
   { icon: MapPin, label: "My Places", path: "/my-places" },
 ];
 

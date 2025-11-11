@@ -1,3 +1,5 @@
+import { useState, useRef } from "react";
+import { Upload, CheckCircle, AlertCircle, FileText, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "@/hooks/use-toast";
 

@@ -59,7 +59,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={() => {
                     this.setState({ hasError: false, error: null });
-                    window.location.href = "/";
+                    // Redirect to home page - ProtectedRoute will handle auth if needed
+                    window.location.href = "/home";
                   }}
                 >
                   Go Home

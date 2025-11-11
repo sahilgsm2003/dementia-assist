@@ -10,6 +10,7 @@ import { formatLocalDate } from "@/lib/dateUtils";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useState } from "react";
+import { TimePicker } from "@/components/shared/TimePicker";
 
 interface ReminderFormProps {
   selectedDate: Date;
@@ -44,13 +45,43 @@ export const ReminderForm = ({ selectedDate, onSuccess }: ReminderFormProps) => 
     try {
       setSubmitting(true);
       const isoDate = formatLocalDate(selectedDate);
-      await remindersAPI.createReminder({
+      // Ensure time is in HH:MM:SS format for backend
+      const timeWithSeconds = formState.time.includes(":") && formState.time.split(":").length === 2
+        ? `${formState.time}:00`
+        : formState.time;
+      
+      // Validate that we have both date and time
+      if (!isoDate || !timeWithSeconds) {
+        toast({
+          title: "Error",
+          description: "Please provide both date and time",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const payload: Record<string, unknown> = {
         title: formState.title.trim(),
-        description: formState.description.trim() || undefined,
-        date: isoDate,
-        time: formState.time,
-        notification_sound: formState.notification_sound,
-      });
+        reminder_type: "time",
+      };
+      
+      // Only add optional fields if they have values
+      if (formState.description.trim()) {
+        payload.description = formState.description.trim();
+      }
+      if (isoDate) {
+        payload.date = isoDate;
+      }
+      if (timeWithSeconds) {
+        payload.time = timeWithSeconds;
+      }
+      if (formState.notification_sound) {
+        payload.notification_sound = formState.notification_sound;
+      }
+      
+      console.log("Sending reminder payload:", payload);
+      
+      await remindersAPI.createReminder(payload);
 
       toast({
         title: "Success",
@@ -66,8 +97,15 @@ export const ReminderForm = ({ selectedDate, onSuccess }: ReminderFormProps) => 
       });
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create reminder", error);
+      console.error("Error response:", error?.response?.data);
+      console.error("Error details:", error?.response?.data?.detail);
+      if (Array.isArray(error?.response?.data?.detail)) {
+        error.response.data.detail.forEach((err: any, index: number) => {
+          console.error(`Error ${index + 1}:`, JSON.stringify(err, null, 2));
+        });
+      }
       toast({
         title: "Error",
         description: getErrorMessage(error),
@@ -87,7 +125,7 @@ export const ReminderForm = ({ selectedDate, onSuccess }: ReminderFormProps) => 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,180px)] sm:items-end">
           <div className="space-y-2">
             <Label htmlFor="reminder-title" className="text-white/80">
               Title *
@@ -102,20 +140,13 @@ export const ReminderForm = ({ selectedDate, onSuccess }: ReminderFormProps) => 
               className="bg-black/30"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="reminder-time" className="text-white/80">
-              Time *
-            </Label>
-            <Input
+            <TimePicker
               id="reminder-time"
-              type="time"
               value={formState.time}
-              onChange={(e) =>
-                setFormState((prev) => ({ ...prev, time: e.target.value }))
+              onChange={(time) =>
+                setFormState((prev) => ({ ...prev, time }))
               }
-              className="bg-black/30"
             />
-          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="reminder-description" className="text-white/80">

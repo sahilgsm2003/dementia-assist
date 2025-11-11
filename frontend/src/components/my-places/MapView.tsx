@@ -57,6 +57,8 @@ interface MapViewProps {
 }
 
 const DEFAULT_CENTER: [number, number] = [28.6139, 77.209]; // Delhi, India
+const MAX_ACCEPTABLE_ACCURACY_METERS = 1000; // Warn but still use readings worse than 1km
+const DISPLAY_ACCURACY_THRESHOLD_METERS = 500; // Only show accuracy if within this range
 
 // Component to handle map clicks
 function MapClickHandler({
@@ -76,7 +78,10 @@ function MapClickHandler({
 function CenterMap({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
+    // Use a higher zoom level when centering on user location for better visibility
+    const zoom = map.getZoom() < 15 ? 15 : map.getZoom();
+    // Use flyTo for smooth animated transition to location
+    map.flyTo(center, zoom, { duration: 0.5 });
   }, [center, map]);
   return null;
 }
@@ -93,8 +98,13 @@ export const MapView = ({
   } | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isSubmittingLocation, setIsSubmittingLocation] = useState(false);
+  const [userLocationCenter, setUserLocationCenter] = useState<[number, number] | null>(null);
 
   const mapCenter = useMemo<[number, number]>(() => {
+    // If user manually requested their location, center on that
+    if (userLocationCenter) {
+      return userLocationCenter;
+    }
     if (liveLocation) {
       return [liveLocation.latitude, liveLocation.longitude];
     }
@@ -102,17 +112,26 @@ export const MapView = ({
       return [places[0].latitude, places[0].longitude];
     }
     return DEFAULT_CENTER;
-  }, [liveLocation, places]);
+  }, [userLocationCenter, liveLocation, places]);
 
   // Watch for live location updates
   useEffect(() => {
     if (!("geolocation" in navigator)) {
+      console.warn("Geolocation not supported");
       return;
     }
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        if (position.coords.accuracy && position.coords.accuracy > 100) {
+        const accuracyValue =
+          typeof position.coords.accuracy === "number"
+            ? position.coords.accuracy
+            : null;
+
+        if (accuracyValue && accuracyValue > MAX_ACCEPTABLE_ACCURACY_METERS) {
+          console.warn(
+            `Skipping live location update due to poor accuracy (${accuracyValue}m)`
+          );
           return;
         }
 
@@ -121,7 +140,7 @@ export const MapView = ({
           await locationsAPI.updateLiveLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
+            accuracy: accuracyValue,
           });
         } catch (error) {
           console.error("Failed to update live location", error);
@@ -131,11 +150,13 @@ export const MapView = ({
       },
       (error) => {
         console.error("Geolocation error:", error);
+        // Don't show error to user - just log it
+        // Location will be updated when user manually requests it or when permission is granted
       },
       {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 30000,
+        enableHighAccuracy: true, // Request GPS for better accuracy
+        maximumAge: 5000, // Accept cached positions up to 5 seconds old (reduced for freshness)
+        timeout: 30000, // Wait up to 30 seconds for a precise reading (increased for better GPS lock)
       }
     );
 
@@ -154,23 +175,72 @@ export const MapView = ({
 
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+        const accuracyValue =
+          typeof position.coords.accuracy === "number"
+            ? position.coords.accuracy
+            : null;
+
+        // Warn but still use location if accuracy is poor (don't reject completely)
+        if (accuracyValue && accuracyValue > MAX_ACCEPTABLE_ACCURACY_METERS) {
+          toast({
+            title: "Location found (low accuracy)",
+            description:
+              `Accuracy ±${Math.round(accuracyValue)}m. For better accuracy, move near a window or go outdoors.`,
+            variant: "default",
+          });
+        }
+
+        // Center map on user's location
+        setUserLocationCenter([lat, lng]);
         setSelectedLocation({ lat, lng });
+        
+        // Update live location on backend
+        try {
+          await locationsAPI.updateLiveLocation({
+            latitude: lat,
+            longitude: lng,
+            accuracy: accuracyValue,
+          });
+        } catch (error) {
+          console.error("Failed to update live location", error);
+          // Don't show error to user - location was still found
+        }
+
         setIsGettingLocation(false);
+        toast({
+          title: "Location found",
+          description: accuracyValue
+            ? `Accuracy ±${Math.round(accuracyValue)} meters`
+            : "Your current location has been found",
+        });
       },
       (error) => {
         setIsGettingLocation(false);
+        let errorMessage = "Could not get your location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied. Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable. Please try again.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again or move to an area with better GPS signal.";
+            break;
+        }
         toast({
           title: "Error",
-          description: "Could not get your location",
+          description: errorMessage,
           variant: "destructive",
         });
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
+        enableHighAccuracy: true, // Request GPS for best accuracy
+        timeout: 30000, // Increased to 30 seconds for better GPS lock
+        maximumAge: 0, // Always get fresh position, don't use cache
       }
     );
   };
@@ -241,6 +311,8 @@ export const MapView = ({
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng });
+    // Reset user location center when user manually clicks map
+    setUserLocationCenter(null);
   };
 
   const handleDeletePlace = async (id: number) => {
@@ -293,7 +365,10 @@ export const MapView = ({
             {selectedLocation && (
               <Button
                 variant="outline"
-                onClick={() => setSelectedLocation(null)}
+                onClick={() => {
+                  setSelectedLocation(null);
+                  setUserLocationCenter(null);
+                }}
                 className="border-white/20 bg-white/5 text-white hover:bg-white/10"
               >
                 Clear selection
@@ -382,7 +457,9 @@ export const MapView = ({
                     <Popup>
                       <div className="space-y-1 text-sm">
                         <p className="font-semibold">You are here</p>
-                        {liveLocation.accuracy && (
+                        {typeof liveLocation.accuracy === "number" &&
+                          liveLocation.accuracy <=
+                            DISPLAY_ACCURACY_THRESHOLD_METERS && (
                           <p className="text-gray-700">
                             Accuracy ±{Math.round(liveLocation.accuracy)} meters
                           </p>
@@ -390,7 +467,8 @@ export const MapView = ({
                       </div>
                     </Popup>
                   </Marker>
-                  {liveLocation.accuracy && liveLocation.accuracy <= 100 && (
+                  {typeof liveLocation.accuracy === "number" &&
+                    liveLocation.accuracy <= 100 && (
                     <Circle
                       center={[liveLocation.latitude, liveLocation.longitude]}
                       radius={liveLocation.accuracy}

@@ -4,10 +4,6 @@ import { remindersAPI, medicationsAPI } from "@/services/api";
 import { formatLocalDate } from "@/lib/dateUtils";
 import { TodaysFocus } from "./TodaysFocus";
 import { TodaysSchedule } from "./TodaysSchedule";
-import { QuickActions } from "./QuickActions";
-import { QuickAccessCards } from "./QuickAccessCards";
-import { CaregiverSection } from "./CaregiverSection";
-import { EmergencyCard } from "@/components/safety/EmergencyCard";
 
 interface Reminder {
   id: number;
@@ -61,23 +57,8 @@ export const HomePage = () => {
         {/* Today's Schedule Section */}
         <TodaysSchedule reminders={todayReminders} isLoading={isLoading} />
 
-        {/* Quick Actions */}
-        <QuickActions />
-
-        {/* Quick Access Cards */}
-        <QuickAccessCards />
-
-        {/* Emergency Card - Prominent Display */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-        >
-          <EmergencyCard compact />
-        </motion.div>
-
-        {/* Caregiver Section */}
-        <CaregiverSection />
+        {/* Spacing */}
+        <div className="h-20" />
       </div>
     </div>
   );

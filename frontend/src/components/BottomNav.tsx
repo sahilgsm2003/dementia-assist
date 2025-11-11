@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Calendar, Users, MessageCircle, Images, MoreHorizontal } from "lucide-react";
+import { Home, Calendar, Users, MessageCircle, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -8,7 +8,6 @@ const navItems = [
   { icon: Calendar, label: "My Day", path: "/my-day" },
   { icon: Users, label: "My People", path: "/my-people" },
   { icon: MessageCircle, label: "Ask Moments", path: "/ask-moments" },
-  { icon: Images, label: "My Memories", path: "/my-memories" },
   { icon: MoreHorizontal, label: "More", path: "/more" },
 ];
 

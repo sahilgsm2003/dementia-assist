@@ -1,4 +1,4 @@
-import { remindersAPI } from "./api";
+import { remindersAPI, medicationsAPI } from "./api";
 
 type Reminder = {
   id: number;
@@ -11,11 +11,21 @@ type Reminder = {
   created_at: string;
 };
 
+type Medication = {
+  id: number;
+  name: string;
+  dosage: string;
+  frequency: string;
+  time: string;
+  times?: string[];
+  purpose?: string;
+};
+
 class NotificationService {
   private checkInterval: number | null = null;
   private checkedReminders: Set<number> = new Set();
+  private checkedMedications: Set<string> = new Set(); // Use "medicationId-time" as key
   private activeSounds: Map<number, AudioBufferSourceNode> = new Map();
-  private activeNotifications: Map<number, Notification> = new Map();
 
   async requestPermission(): Promise<boolean> {
     if (!("Notification" in window)) {
@@ -36,7 +46,7 @@ class NotificationService {
     return permission === "granted";
   }
 
-  private async playContinuousSound(
+  private async playSound(
     reminderId: number,
     soundType: string | null | undefined
   ): Promise<void> {
@@ -47,7 +57,7 @@ class NotificationService {
       // Initialize AudioContext if needed
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
 
-      // Create a continuous tone
+      // Create a gentle chime sound
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
@@ -65,22 +75,16 @@ class NotificationService {
       oscillator.frequency.value = frequency;
       oscillator.type = "sine";
 
-      // Set volume
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      // Set volume - gentle sound
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
 
       // Start playing
       oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 1.5);
 
-      // Store reference so we can stop it later
-      this.activeSounds.set(reminderId, oscillator);
-
-      // Play a second tone for chime effect every 2 seconds
-      const chimeInterval = setInterval(() => {
-        if (!this.activeSounds.has(reminderId)) {
-          clearInterval(chimeInterval);
-          return;
-        }
-
+      // Play a second chime after a short delay for pleasant effect
+      setTimeout(() => {
         const oscillator2 = audioContext.createOscillator();
         const gainNode2 = audioContext.createGain();
 
@@ -90,12 +94,12 @@ class NotificationService {
         oscillator2.frequency.value = frequency * 1.2;
         oscillator2.type = "sine";
 
-        gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
 
         oscillator2.start(audioContext.currentTime);
-        oscillator2.stop(audioContext.currentTime + 0.5);
-      }, 2000);
+        oscillator2.stop(audioContext.currentTime + 1.5);
+      }, 300);
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -111,71 +115,6 @@ class NotificationService {
       }
       this.activeSounds.delete(reminderId);
     }
-  }
-
-  private async showInteractiveNotification(reminder: Reminder): Promise<void> {
-    if (Notification.permission !== "granted") {
-      return;
-    }
-
-    // Close any existing notification for this reminder
-    const existingNotification = this.activeNotifications.get(reminder.id);
-    if (existingNotification) {
-      existingNotification.close();
-    }
-
-    // Create notification with actions (if supported)
-    const notificationOptions: NotificationOptions = {
-      body: reminder.description || "Time for your reminder!",
-      icon: "/favicon.ico",
-      badge: "/favicon.ico",
-      tag: `reminder-${reminder.id}`,
-      requireInteraction: true, // Keep notification visible until user interacts
-      silent: false, // Allow sound
-    };
-
-    // Note: Actions are only supported in Service Workers
-    // For regular notifications, we'll use click handlers instead
-    const notification = new Notification(`Reminder: ${reminder.title}`, notificationOptions);
-
-    // Store notification reference
-    this.activeNotifications.set(reminder.id, notification);
-
-    // Handle notification click - open the app
-    notification.onclick = () => {
-      window.focus();
-      // You could navigate to reminders page here if needed
-      // window.location.href = '/reminders';
-      notification.close();
-    };
-
-    // Handle notification close
-    notification.onclose = () => {
-      this.stopSound(reminder.id);
-      this.activeNotifications.delete(reminder.id);
-    };
-
-    // Start continuous sound
-    await this.playContinuousSound(reminder.id, reminder.notification_sound);
-    
-    // Emit a custom event for reminder interaction
-    // Components can listen to this event and show a dialog
-    setTimeout(() => {
-      if (this.activeNotifications.has(reminder.id)) {
-        // Emit event instead of using confirm()
-        window.dispatchEvent(
-          new CustomEvent("reminder-notification", {
-            detail: {
-              reminderId: reminder.id,
-              title: reminder.title,
-              description: reminder.description || "Time for your reminder!",
-              onConfirm: () => this.handleMarkDone(reminder.id),
-              onCancel: () => this.handleSnooze(reminder.id),
-            },
-          })
-        );
-      }
-    }, 1000); // Show dialog after 1 second
   }
 
   private async handleMarkDone(reminderId: number): Promise<void> {
@@ -204,6 +143,27 @@ class NotificationService {
     } catch (error) {
       console.error("Error snoozing reminder:", error);
     }
+  }
+
+  private async notifyReminder(reminder: Reminder): Promise<void> {
+    // Play sound only (no popup)
+    await this.playSound(reminder.id, reminder.notification_sound);
+
+    // Emit event to add notification to the notification context
+    window.dispatchEvent(
+      new CustomEvent("add-notification", {
+        detail: {
+          type: "reminder" as const,
+          title: reminder.title,
+          description: reminder.description || "Time for your reminder!",
+          data: {
+            reminderId: reminder.id,
+            onMarkDone: () => this.handleMarkDone(reminder.id),
+            onSnooze: () => this.handleSnooze(reminder.id),
+          },
+        },
+      })
+    );
   }
 
   private async checkAndNotifyReminders(): Promise<void> {
@@ -235,8 +195,8 @@ class NotificationService {
         const reminderTime = reminder.time.slice(0, 5); // Get HH:MM format
 
         if (reminderTime === currentTime) {
-          // Show interactive notification
-          await this.showInteractiveNotification(reminder);
+          // Notify reminder (sound + add to notification context)
+          await this.notifyReminder(reminder);
 
           // Mark as checked (will be removed if snoozed)
           this.checkedReminders.add(reminder.id);
@@ -252,6 +212,115 @@ class NotificationService {
     }
   }
 
+  private async notifyMedication(medication: Medication, time: string): Promise<void> {
+    // Play sound (use medication ID as sound ID)
+    await this.playSound(medication.id, "gentle-chime");
+
+    // Emit event to add notification to the notification context
+    window.dispatchEvent(
+      new CustomEvent("add-notification", {
+        detail: {
+          type: "medication" as const,
+          title: `Time to take ${medication.name}`,
+          description: `Take ${medication.dosage}${medication.purpose ? ` - ${medication.purpose}` : ""}`,
+          data: {
+            medicationId: medication.id,
+            onMarkDone: () => this.handleMedicationMarkDone(medication.id, time),
+          },
+        },
+      })
+    );
+  }
+
+  private async handleMedicationMarkDone(medicationId: number, time: string): Promise<void> {
+    try {
+      // Track medication as taken
+      await medicationsAPI.trackMedication(medicationId, true);
+      this.stopSound(medicationId);
+      
+      // Mark as checked
+      this.checkedMedications.add(`${medicationId}-${time}`);
+      
+      // Trigger a custom event to update the UI
+      window.dispatchEvent(new CustomEvent("medication-completed", { detail: { medicationId, time } }));
+    } catch (error) {
+      console.error("Error marking medication as done:", error);
+    }
+  }
+
+  private async checkAndNotifyMedications(): Promise<void> {
+    try {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+      // Fetch today's medications
+      const medications = await medicationsAPI.getTodayMedications();
+
+      if (!Array.isArray(medications)) {
+        return;
+      }
+
+        // Check each medication
+        for (const medication of medications) {
+          // Get all times for this medication (primary time + additional times)
+          const medicationTimes: string[] = [];
+          
+          if (medication.time) {
+            // Handle time object or string format
+            let timeStr: string;
+            if (typeof medication.time === "string") {
+              // Already a string, extract HH:MM
+              timeStr = medication.time.slice(0, 5);
+            } else if (medication.time && typeof medication.time === "object") {
+              // Time object with hours and minutes
+              const hours = String(medication.time.hours || 0).padStart(2, "0");
+              const minutes = String(medication.time.minutes || 0).padStart(2, "0");
+              timeStr = `${hours}:${minutes}`;
+            } else {
+              continue; // Skip if time format is unexpected
+            }
+            medicationTimes.push(timeStr);
+          }
+          
+          // Add additional times if they exist
+          if (medication.times && Array.isArray(medication.times)) {
+            medication.times.forEach((t: string) => {
+              const timeStr = t.slice(0, 5); // Get HH:MM format
+              if (!medicationTimes.includes(timeStr)) {
+                medicationTimes.push(timeStr);
+              }
+            });
+          }
+
+        // Check each time slot
+        for (const medTime of medicationTimes) {
+          const checkKey = `${medication.id}-${medTime}`;
+          
+          // Skip if we've already notified this medication at this time
+          if (this.checkedMedications.has(checkKey)) {
+            continue;
+          }
+
+          // Check if it's time for this medication (within the current minute)
+          if (medTime === currentTime) {
+            // Notify medication (sound + add to notification context)
+            await this.notifyMedication(medication, medTime);
+
+            // Mark as checked
+            this.checkedMedications.add(checkKey);
+          }
+        }
+      }
+
+      // Clean up old checked medications (older than 1 hour)
+      if (this.checkedMedications.size > 100) {
+        this.checkedMedications.clear();
+      }
+    } catch (error) {
+      console.error("Error checking medications:", error);
+    }
+  }
+
   async start(): Promise<void> {
     const hasPermission = await this.requestPermission();
 
@@ -262,10 +331,12 @@ class NotificationService {
 
     // Check immediately
     await this.checkAndNotifyReminders();
+    await this.checkAndNotifyMedications();
 
     // Check every 30 seconds
     this.checkInterval = window.setInterval(() => {
       this.checkAndNotifyReminders();
+      this.checkAndNotifyMedications();
     }, 30000);
   }
 
@@ -280,14 +351,9 @@ class NotificationService {
       this.stopSound(reminderId);
     });
     
-    // Close all active notifications
-    this.activeNotifications.forEach((notification) => {
-      notification.close();
-    });
-    
     this.checkedReminders.clear();
+    this.checkedMedications.clear();
     this.activeSounds.clear();
-    this.activeNotifications.clear();
   }
 }
 

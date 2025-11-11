@@ -1,4 +1,18 @@
+import { useState, useEffect } from "react";
+import { Pill, Plus, Clock, CheckCircle2, Circle, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonGrid } from "@/components/shared/SkeletonGrid";
+import { ExportDialog } from "@/components/shared/ExportDialog";
+import { medicationsAPI } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { formatTime } from "@/lib/dateUtils";
 
 interface Medication {
   id?: number;
@@ -273,6 +287,7 @@ export const MedicationList = () => {
             />
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {todayMedications.length === 0 ? (
@@ -305,17 +320,19 @@ export const MedicationList = () => {
   );
 };
 
+interface MedicationCardProps {
+  medication: Medication;
+  onEdit: () => void;
+  onDelete: () => void;
+  onTrack: () => void;
+}
+
 const MedicationCard = ({
   medication,
   onEdit,
   onDelete,
   onTrack,
-}: {
-  medication: Medication;
-  onEdit: () => void;
-  onDelete: () => void;
-  onTrack: () => void;
-}) => {
+}: MedicationCardProps) => {
   const isTaken = medication.takenToday || false;
   
   return (
@@ -411,15 +428,17 @@ const MedicationCard = ({
   );
 };
 
+interface MedicationFormProps {
+  medication: Medication | null;
+  onSave: (medication: Medication) => void;
+  onCancel: () => void;
+}
+
 const MedicationForm = ({
   medication,
   onSave,
   onCancel,
-}: {
-  medication: Medication | null;
-  onSave: (medication: Medication) => void;
-  onCancel: () => void;
-}) => {
+}: MedicationFormProps) => {
   const [formData, setFormData] = useState<Medication>({
     name: medication?.name || "",
     dosage: medication?.dosage || "",

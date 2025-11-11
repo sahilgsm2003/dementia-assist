@@ -15,6 +15,9 @@ class RAGService:
         # Configure Google Gemini
         if settings.GEMINI_API_KEY:
             genai.configure(api_key=settings.GEMINI_API_KEY)
+            # Log which key is being used (first 10 chars for security)
+            key_preview = settings.GEMINI_API_KEY[:10] + "..." if len(settings.GEMINI_API_KEY) > 10 else "***"
+            print(f"Gemini API configured with key: {key_preview}")
         else:
             print("Warning: GEMINI_API_KEY not set in configuration")
 
@@ -32,15 +35,16 @@ class RAGService:
         return query
 
 
-    def retrieve_relevant_context(self, query: str, user_id: int, max_chunks: int = 3) -> List[Dict[str, Any]]:
+    def retrieve_relevant_context(self, query: str, user_id: int, max_chunks: int = 2) -> List[Dict[str, Any]]:
         """
         Retrieve relevant document chunks for the query.
+        Optimized for speed: reduced default chunks from 3 to 2.
         """
         try:
             # Preprocess the query
             processed_query = self.preprocess_query(query)
             
-            # Search for similar documents
+            # Search for similar documents (reduced to 2 chunks for faster responses)
             results = self.vector_service.search_similar_documents(
                 processed_query, 
                 user_id, 
@@ -75,54 +79,17 @@ class RAGService:
     def create_dementia_friendly_prompt(self, query: str, context: str) -> str:
         """
         Create a prompt optimized for dementia care responses.
+        Optimized for speed: shorter, more concise prompt.
         """
-        # Detect question type for specialized handling
-        query_lower = query.lower()
-        
-        if any(word in query_lower for word in ['birthday', 'born', 'birth']):
-            question_type = "personal_dates"
-        elif any(word in query_lower for word in ['family', 'children', 'spouse', 'wife', 'husband', 'daughter', 'son']):
-            question_type = "family"
-        elif any(word in query_lower for word in ['medication', 'medicine', 'doctor', 'health', 'appointment']):
-            question_type = "health"
-        elif any(word in query_lower for word in ['work', 'job', 'career', 'profession']):
-            question_type = "work"
-        elif any(word in query_lower for word in ['where', 'live', 'address', 'home']):
-            question_type = "location"
-        else:
-            question_type = "general"
-        
-        # Specialized prompts for different question types
-        specialized_instructions = {
-            "personal_dates": "Focus on specific dates and celebrations. Mention any special traditions or memories associated with the date.",
-            "family": "Provide warm details about family relationships. Include names, relationships, and any special memories mentioned.",
-            "health": "Be gentle and reassuring when discussing health matters. Focus on current care plans and important medical information.",
-            "work": "Share details about their career and professional life. Include any pride they had in their work.",
-            "location": "Provide clear information about where they live. Include any important details about the neighborhood or home.",
-            "general": "Provide the most relevant information in a caring, organized way."
-        }
+        prompt = f"""You are a caring memory assistant. Answer clearly and warmly using the information provided.
 
-        prompt = f"""You are a caring personal memory assistant helping someone remember important details from their life. You have access to their personal documents and should provide warm, clear, and reassuring responses.
-
-RESPONSE GUIDELINES:
-• Use simple, clear language with short sentences
-• Be warm, patient, and reassuring in tone  
-• Start with the most important information first
-• Use everyday language, avoid medical or technical terms
-• Never use asterisks, bullets, or special formatting characters
-• Organize information naturally with clear breaks between topics
-• If unsure about details, acknowledge it gently
-• End on a positive, reassuring note when possible
-
-SPECIAL FOCUS: {specialized_instructions[question_type]}
-
-PERSONAL INFORMATION AVAILABLE:
+INFORMATION:
 {context}
 
 QUESTION: {query}
 
-Please provide a caring, well-organized response. Use natural paragraph breaks to separate different topics. Speak as if you're a trusted friend helping them remember."""
-
+Provide a clear, warm response in simple language. Use natural paragraph breaks. Be reassuring."""
+        
         return prompt
 
 
@@ -149,29 +116,111 @@ Please provide a caring, well-organized response. Use natural paragraph breaks t
         
         return '\n'.join(formatted_lines).strip()
 
+    def _extract_response_text(self, response: Any) -> str:
+        """
+        Safely extract plain text from a Gemini response object.
+        Handles cases where the fast accessor `.text` is unavailable
+        (e.g. tool calls, safety blocks, or empty candidates).
+        """
+        if response is None:
+            return ""
+
+        texts: List[str] = []
+        candidates = getattr(response, "candidates", None)
+        if candidates is None and isinstance(response, dict):
+            candidates = response.get("candidates")
+
+        if not candidates:
+            return ""
+
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            if content is None and isinstance(candidate, dict):
+                content = candidate.get("content")
+            if content is None:
+                continue
+
+            parts = getattr(content, "parts", None)
+            if parts is None and isinstance(content, dict):
+                parts = content.get("parts")
+            if not parts:
+                continue
+
+            for part in parts:
+                text = getattr(part, "text", None)
+                if text is None and isinstance(part, dict):
+                    text = part.get("text")
+                if text:
+                    texts.append(text.strip())
+
+        return "\n".join([t for t in texts if t]).strip()
+
     def call_gemini_chat(self, prompt: str) -> str:
         """
         Make a request to Google Gemini for chat completion.
         """
         try:
             # Use Gemini Flash for fast responses
-            model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
             
             response = model.generate_content(
                 prompt,
                 generation_config=genai.types.GenerationConfig(
-                    temperature=0.2,  # Lower temperature for more consistent, factual responses
-                    max_output_tokens=400,  # Appropriate length for dementia care
-                    top_p=0.7  # More focused responses
+                    temperature=0.3,  # Slightly higher for faster responses
+                    max_output_tokens=1024,  # Reduced from 2048 for faster generation
+                    top_p=0.8  # Slightly higher for faster responses
                 )
             )
             
             # Format the response for better readability
-            formatted_response = self.format_response_text(response.text)
+            raw_text = self._extract_response_text(response)
+
+            if not raw_text:
+                # Check finish reasons to understand why we got no text
+                finish_reasons = []
+                for candidate in getattr(response, "candidates", []):
+                    finish_reason = getattr(candidate, "finish_reason", None)
+                    if finish_reason:
+                        finish_reasons.append(finish_reason)
+                
+                # If MAX_TOKENS, try to get partial text anyway
+                if finish_reasons and any("MAX_TOKENS" in str(fr) for fr in finish_reasons):
+                    # Try to extract any partial text that might exist
+                    for candidate in getattr(response, "candidates", []):
+                        content = getattr(candidate, "content", None)
+                        if content:
+                            parts = getattr(content, "parts", [])
+                            for part in parts:
+                                text = getattr(part, "text", None)
+                                if text and text.strip():
+                                    # Return partial text with a note
+                                    formatted = self.format_response_text(text.strip())
+                                    return formatted + "\n\n(Response was cut off due to length limits)"
+                
+                print(
+                    "Gemini returned no textual content. "
+                    f"finish_reasons={finish_reasons}, prompt_feedback={getattr(response, 'prompt_feedback', None)}"
+                )
+                return (
+                    "I'm sorry, I couldn't generate a helpful answer right now. "
+                    "Please try asking again in a moment."
+                )
+
+            formatted_response = self.format_response_text(raw_text)
             return formatted_response
             
         except Exception as e:
+            error_msg = str(e)
             print(f"Error calling Gemini API: {e}")
+            
+            # Check if it's a quota error
+            if "429" in error_msg or "quota" in error_msg.lower() or "Quota exceeded" in error_msg:
+                print(f"⚠️  QUOTA ERROR: The current API key has exceeded its quota limits.")
+                print(f"   Current key preview: {settings.GEMINI_API_KEY[:10] + '...' if settings.GEMINI_API_KEY else 'NOT SET'}")
+                print(f"   Please check your Gemini API quota or use a different API key.")
+                print(f"   Make sure to restart the backend server after updating the .env file.")
+                return "I'm currently experiencing high demand. Please try again in a few moments, or contact support if this persists."
+            
             return "I'm sorry, I'm having trouble accessing my knowledge right now. Please try again in a moment."
 
 
@@ -195,17 +244,19 @@ Please provide a caring, well-organized response. Use natural paragraph breaks t
             # Calculate confidence score based on context quality
             confidence_score = self._calculate_confidence_score(context_results)
             
-            # Store the conversation in the database
-            chat_message = ChatMessage(
-                user_id=user_id,
-                question=question,
-                response=response,
-                confidence_score=confidence_score
-            )
-            
-            db.add(chat_message)
-            db.commit()
-            db.refresh(chat_message)
+            # Store the conversation in the database (non-blocking for faster response)
+            try:
+                chat_message = ChatMessage(
+                    user_id=user_id,
+                    question=question,
+                    response=response,
+                    confidence_score=confidence_score
+                )
+                db.add(chat_message)
+                db.commit()
+            except Exception as db_error:
+                # Don't fail the request if DB write fails
+                print(f"Warning: Failed to save chat message to database: {db_error}")
             
             return {
                 "question": question,

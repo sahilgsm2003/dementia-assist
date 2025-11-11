@@ -10,6 +10,8 @@ import { locationsAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 
+const MAX_ACCEPTABLE_ACCURACY_METERS = 1000;
+
 interface AddPlaceFormProps {
   onSuccess: () => void;
   onCancel: () => void;
@@ -38,6 +40,22 @@ export const AddPlaceForm = ({ onSuccess, onCancel }: AddPlaceFormProps) => {
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const accuracyValue =
+          typeof position.coords.accuracy === "number"
+            ? position.coords.accuracy
+            : null;
+
+        if (accuracyValue && accuracyValue > MAX_ACCEPTABLE_ACCURACY_METERS) {
+          setIsGettingLocation(false);
+          toast({
+            title: "Location accuracy is low",
+            description:
+              "We couldn't get a precise location. Please move closer to a window or go outdoors and try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         setFormData({
           ...formData,
           latitude: position.coords.latitude.toFixed(6),
@@ -46,20 +64,35 @@ export const AddPlaceForm = ({ onSuccess, onCancel }: AddPlaceFormProps) => {
         setIsGettingLocation(false);
         toast({
           title: "Location found",
-          description: "Your current location has been added",
+          description: accuracyValue
+            ? `Accuracy ±${Math.round(accuracyValue)} meters`
+            : "Your current location has been added",
         });
       },
       (error) => {
         setIsGettingLocation(false);
+        let errorMessage = "Could not get your location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied. Please enable location access in your browser settings and try again.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable. Please try again or enter coordinates manually.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+        }
         toast({
           title: "Error",
-          description: "Could not get your location. Please enter coordinates manually.",
+          description: errorMessage,
           variant: "destructive",
         });
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
+        enableHighAccuracy: true, // Request the most accurate location available
+        timeout: 20000, // 20 seconds timeout
+        maximumAge: 0, // Do not use cached positions
       }
     );
   };

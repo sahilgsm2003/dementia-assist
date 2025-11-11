@@ -65,7 +65,7 @@ export const LandingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white text-balance px-2"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight text-white text-balance px-2"
           >
             Help your loved one remember what matters most
           </motion.h1>
@@ -99,7 +99,7 @@ export const LandingPage = () => {
       </section>
 
       {/* Features */}
-      <section className="container mx-auto px-4 sm:px-6">
+      <section className="container mx-auto px-4 sm:px-6 pt-16 md:pt-24 lg:pt-32">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

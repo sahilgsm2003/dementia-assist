@@ -57,6 +57,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setToken(null);
           setUser(null);
         }
+      } else {
+        // No stored token, ensure state is cleared
+        setToken(null);
+        setUser(null);
       }
 
       setIsLoading(false);

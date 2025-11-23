@@ -10,7 +10,7 @@ load_dotenv()
 
 from .db import database
 from .models import models
-from .routers import auth, rag, memories, reminders, locations, medications, emergency, voice_notes, search, family, translation
+from .routers import auth, rag, memories, reminders, locations, medications, emergency, voice_notes, search, family
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -44,7 +44,6 @@ app.include_router(emergency.router)
 app.include_router(voice_notes.router)
 app.include_router(search.router)
 app.include_router(family.router)
-app.include_router(translation.router)
 
 
 @app.get("/")

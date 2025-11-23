@@ -11,6 +11,7 @@ import { ExportDialog } from "@/components/shared/ExportDialog";
 import { emergencyAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { useTranslation } from "react-i18next";
 
 interface EmergencyInfo {
   name: string;
@@ -28,6 +29,7 @@ interface EmergencyInfo {
 }
 
 export const EmergencyInfoPage = () => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [emergencyInfo, setEmergencyInfo] = useState<EmergencyInfo>({
@@ -66,8 +68,8 @@ export const EmergencyInfoPage = () => {
       if (error?.response?.status !== 404) {
         console.error("Failed to load emergency info", error);
         toast({
-          title: "Error",
-          description: "Failed to load emergency information",
+          title: t("common.error"),
+          description: t("emergency.loadError"),
           variant: "destructive",
         });
       }
@@ -91,22 +93,22 @@ export const EmergencyInfoPage = () => {
         });
         setIsEditing(false);
         toast({
-          title: "Success",
-          description: "Emergency information saved",
+          title: t("common.success"),
+          description: t("emergency.saveSuccess"),
         });
         loadEmergencyInfo(); // Reload from API
       } else {
         toast({
-          title: "Error",
-          description: "Please fill in name and at least one emergency contact",
+          title: t("common.error"),
+          description: t("emergency.validationError"),
           variant: "destructive",
         });
       }
     } catch (error: any) {
       console.error("Failed to save emergency info", error);
       toast({
-        title: "Error",
-        description: getErrorMessage(error),
+        title: t("common.error"),
+        description: getErrorMessage(error) || t("emergency.saveError"),
         variant: "destructive",
       });
     }
@@ -140,7 +142,7 @@ export const EmergencyInfoPage = () => {
     return (
       <div className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-white/70">Loading emergency information...</p>
+          <p className="text-white/70">{t("emergency.loading")}</p>
         </div>
       </div>
     );
@@ -156,14 +158,13 @@ export const EmergencyInfoPage = () => {
             className="inline-flex items-center gap-2 rounded-full bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 ring-1 ring-red-500/30 backdrop-blur"
           >
             <Shield className="h-4 w-4" />
-            Safety First
+            {t("emergency.safetyFirst")}
           </motion.div>
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-            Emergency Information
+            {t("emergency.emergencyInformation")}
           </h1>
           <p className="text-base text-white/70">
-            Critical information accessible at all times. Keep this updated and
-            share with caregivers.
+            {t("emergency.description")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -186,22 +187,22 @@ export const EmergencyInfoPage = () => {
             className="hidden print:hidden"
           >
             <Printer className="mr-2 h-4 w-4" />
-            Print
+            {t("emergency.print")}
           </Button>
           <Dialog open={isEditing} onOpenChange={setIsEditing}>
             <DialogTrigger asChild>
               <Button>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                {t("emergency.edit")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Edit Emergency Information</DialogTitle>
+                <DialogTitle>{t("emergency.editEmergencyInformation")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-6 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t("emergency.name")}</Label>
                   <Input
                     id="name"
                     value={emergencyInfo.name}
@@ -212,7 +213,7 @@ export const EmergencyInfoPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Emergency Contacts</Label>
+                  <Label>{t("emergency.emergencyContacts")}</Label>
                   {emergencyInfo.emergencyContacts.map((contact, index) => (
                     <div
                       key={index}
@@ -220,7 +221,7 @@ export const EmergencyInfoPage = () => {
                     >
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label className="text-xs">Name</Label>
+                          <Label className="text-xs">{t("emergency.name")}</Label>
                           <Input
                             value={contact.name}
                             onChange={(e) =>
@@ -229,7 +230,7 @@ export const EmergencyInfoPage = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">Phone</Label>
+                          <Label className="text-xs">{t("emergency.phone")}</Label>
                           <Input
                             value={contact.phone}
                             onChange={(e) =>
@@ -239,7 +240,7 @@ export const EmergencyInfoPage = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">Relationship</Label>
+                        <Label className="text-xs">{t("emergency.relationship")}</Label>
                         <Input
                           value={contact.relationship}
                           onChange={(e) =>
@@ -259,12 +260,12 @@ export const EmergencyInfoPage = () => {
                     size="sm"
                     onClick={addEmergencyContact}
                   >
-                    Add Contact
+                    {t("emergency.addContact")}
                   </Button>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="medicalConditions">Medical Conditions</Label>
+                  <Label htmlFor="medicalConditions">{t("emergency.medicalConditions")}</Label>
                   <Textarea
                     id="medicalConditions"
                     value={emergencyInfo.medicalConditions}
@@ -279,7 +280,7 @@ export const EmergencyInfoPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="allergies">Allergies</Label>
+                  <Label htmlFor="allergies">{t("emergency.allergies")}</Label>
                   <Input
                     id="allergies"
                     value={emergencyInfo.allergies}
@@ -290,7 +291,7 @@ export const EmergencyInfoPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="medications">Current Medications</Label>
+                  <Label htmlFor="medications">{t("emergency.currentMedications")}</Label>
                   <Textarea
                     id="medications"
                     value={emergencyInfo.medications}
@@ -306,7 +307,7 @@ export const EmergencyInfoPage = () => {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="doctorName">Doctor's Name</Label>
+                    <Label htmlFor="doctorName">{t("emergency.doctorsName")}</Label>
                     <Input
                       id="doctorName"
                       value={emergencyInfo.doctorName}
@@ -319,7 +320,7 @@ export const EmergencyInfoPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="doctorPhone">Doctor's Phone</Label>
+                    <Label htmlFor="doctorPhone">{t("emergency.doctorsPhone")}</Label>
                     <Input
                       id="doctorPhone"
                       value={emergencyInfo.doctorPhone}
@@ -334,7 +335,7 @@ export const EmergencyInfoPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="homeAddress">Home Address</Label>
+                  <Label htmlFor="homeAddress">{t("emergency.homeAddress")}</Label>
                   <Textarea
                     id="homeAddress"
                     value={emergencyInfo.homeAddress}
@@ -350,9 +351,9 @@ export const EmergencyInfoPage = () => {
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
-                    Cancel
+                    {t("emergency.cancel")}
                   </Button>
-                  <Button onClick={handleSave}>Save Changes</Button>
+                  <Button onClick={handleSave}>{t("emergency.saveChanges")}</Button>
                 </div>
               </div>
             </DialogContent>
@@ -366,20 +367,20 @@ export const EmergencyInfoPage = () => {
           <CardContent className="p-6 space-y-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-                My Name
+                {t("emergency.myName")}
               </p>
-              <p className="text-2xl font-bold text-white">{emergencyInfo.name || "Not set"}</p>
+              <p className="text-2xl font-bold text-white">{emergencyInfo.name || t("emergency.notSet")}</p>
             </div>
 
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-3">
-                Emergency Contacts
+                {t("emergency.emergencyContacts")}
               </p>
               {emergencyInfo.emergencyContacts.length === 0 || 
                emergencyInfo.emergencyContacts.every(c => !c.name && !c.phone) ? (
                 <div className="p-4 rounded-lg bg-black/30 border border-white/10 text-center">
-                  <p className="text-sm text-white/60">No emergency contacts added yet</p>
-                  <p className="text-xs text-white/40 mt-1">Click "Edit" to add contacts</p>
+                  <p className="text-sm text-white/60">{t("emergency.noContactsAdded")}</p>
+                  <p className="text-xs text-white/40 mt-1">{t("emergency.clickEditToAdd")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -392,7 +393,7 @@ export const EmergencyInfoPage = () => {
                     >
                       <div>
                         <p className="text-base font-semibold text-white">
-                          {contact.name || "Not set"}
+                          {contact.name || t("emergency.notSet")}
                         </p>
                         <p className="text-sm text-white/60">{contact.relationship || ""}</p>
                       </div>
@@ -413,25 +414,25 @@ export const EmergencyInfoPage = () => {
 
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-3">
-                Medical Information
+                {t("emergency.medicalInformation")}
               </p>
               <div className="space-y-2 text-sm">
                 <div className="p-3 rounded-lg bg-black/30">
-                  <span className="text-white/60">Conditions: </span>
+                  <span className="text-white/60">{t("emergency.conditions")}: </span>
                   <span className="text-white">
-                    {emergencyInfo.medicalConditions || "None listed"}
+                    {emergencyInfo.medicalConditions || t("emergency.noneListed")}
                   </span>
                 </div>
                 <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                  <span className="text-white/60">Allergies: </span>
+                  <span className="text-white/60">{t("emergency.allergies")}: </span>
                   <span className="text-red-200 font-medium">
-                    {emergencyInfo.allergies || "None listed"}
+                    {emergencyInfo.allergies || t("emergency.noneListed")}
                   </span>
                 </div>
                 <div className="p-3 rounded-lg bg-black/30">
-                  <span className="text-white/60">Medications: </span>
+                  <span className="text-white/60">{t("emergency.medications")}: </span>
                   <span className="text-white">
-                    {emergencyInfo.medications || "None listed"}
+                    {emergencyInfo.medications || t("emergency.noneListed")}
                   </span>
                 </div>
               </div>
@@ -440,7 +441,7 @@ export const EmergencyInfoPage = () => {
             {emergencyInfo.doctorName && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-                  Primary Doctor
+                  {t("emergency.primaryDoctor")}
                 </p>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-black/30">
                   <p className="text-sm font-medium text-white">
@@ -461,12 +462,12 @@ export const EmergencyInfoPage = () => {
 
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-                Home Address
+                {t("emergency.homeAddress")}
               </p>
               <div className="flex items-start gap-2 p-3 rounded-lg bg-black/30">
                 <MapPin className="h-4 w-4 text-white/60 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-white/80">
-                  {emergencyInfo.homeAddress || "Not set"}
+                  {emergencyInfo.homeAddress || t("emergency.notSet")}
                 </p>
               </div>
             </div>
@@ -478,21 +479,21 @@ export const EmergencyInfoPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-yellow-200">
               <AlertCircle className="h-5 w-5" />
-              Important Notes
+              {t("emergency.importantNotes")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-yellow-100/90">
             <p>
-              • Keep this information updated and easily accessible
+              • {t("emergency.note1")}
             </p>
             <p>
-              • Share with family members and caregivers
+              • {t("emergency.note2")}
             </p>
             <p>
-              • Consider printing a wallet-sized version
+              • {t("emergency.note3")}
             </p>
             <p>
-              • Update medications and conditions regularly
+              • {t("emergency.note4")}
             </p>
           </CardContent>
         </Card>

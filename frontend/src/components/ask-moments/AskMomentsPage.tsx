@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { MessageCircle, Brain, Sparkles } from "lucide-react";
 import { ChatInterface } from "./ChatInterface";
-import { SuggestedQuestions } from "./SuggestedQuestions";
 import DocumentUpload from "../DocumentUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useMemo } from "react";
@@ -16,6 +16,7 @@ interface Document {
 }
 
 export const AskMomentsPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const defaultTab =
     (location.state?.tab as "chat" | "documents" | undefined) ?? "chat";
@@ -38,9 +39,7 @@ export const AskMomentsPage = () => {
         setLoadError(null);
       } catch (error) {
         console.error("Failed to fetch documents:", error);
-        setLoadError(
-          "We couldn't load your documents right now. Please refresh to try again."
-        );
+        setLoadError(t("askMoments.couldNotLoadDocuments"));
       }
     };
 
@@ -54,7 +53,7 @@ export const AskMomentsPage = () => {
       setLoadError(null);
     } catch (error) {
       console.error("Failed to refresh documents", error);
-      setLoadError("Unable to refresh documents. Please try again.");
+      setLoadError(t("askMoments.unableToRefresh"));
     }
   };
 
@@ -114,7 +113,7 @@ export const AskMomentsPage = () => {
           className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 ring-1 ring-white/15 backdrop-blur"
         >
           <Sparkles className="h-4 w-4 text-[#E02478]" />
-          Ask Moments
+          {t("askMoments.title")}
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
@@ -122,11 +121,10 @@ export const AskMomentsPage = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-3xl font-semibold tracking-tight text-white md:text-4xl"
         >
-          Your personal memory assistant, always ready to help.
+          {t("askMoments.heading")}
         </motion.h1>
         <p className="mx-auto max-w-2xl text-base text-white/70">
-          Ask questions about your life, family, schedule, and more. 
-          I remember what matters most to you.
+          {t("askMoments.description")}
         </p>
       </div>
 
@@ -138,11 +136,11 @@ export const AskMomentsPage = () => {
         <TabsList className="bg-white/10">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4" />
-            Conversation
+            {t("askMoments.conversation")}
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
-            Documents
+            {t("askMoments.documents")}
           </TabsTrigger>
         </TabsList>
 
@@ -156,17 +154,17 @@ export const AskMomentsPage = () => {
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-2">
                   <h3 className="text-xl font-semibold text-yellow-100">
-                    Add a document to begin chatting
+                    {t("askMoments.addDocumentToBegin")}
                   </h3>
                   <p className="text-sm text-yellow-200">
-                    Upload a diary, care plan, or set of notes so I can give thoughtful, accurate answers.
+                    {t("askMoments.addDocumentDescription")}
                   </p>
                 </div>
                 <button
                   onClick={() => setActiveTab("documents")}
                   className="w-full rounded-full bg-white px-6 py-3 text-[#E02478] hover:bg-white/90 sm:w-auto font-semibold transition-colors"
                 >
-                  Upload a PDF
+                  {t("askMoments.uploadPDF")}
                 </button>
               </div>
             </motion.div>

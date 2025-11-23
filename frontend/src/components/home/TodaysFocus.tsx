@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { formatDate, getDayName } from "@/lib/dateUtils";
 import { useAuth } from "@/context/AuthContext";
 import { getWeatherIcon, getWeatherIconColor } from "@/hooks/useWeather";
@@ -14,12 +15,14 @@ export const TodaysFocus = ({ className }: TodaysFocusProps) => {
   const dayName = getDayName(today);
   const formattedDate = formatDate(today);
   
+  const { t } = useTranslation();
+  
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = today.getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return t("home.goodMorning");
+    if (hour < 17) return t("home.goodAfternoon");
+    return t("home.goodEvening");
   };
 
   // Hardcoded weather data

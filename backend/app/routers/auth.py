@@ -9,6 +9,10 @@ from app.schemas import schemas
 from app.services import auth_service
 from app.models import models
 from app.db.database import get_db
+from app.services.translation_service import (
+    SUPPORTED_TRANSLATION_PROVIDERS,
+    translation_service,
+)
 
 router = APIRouter(tags=["authentication"])
 
@@ -43,8 +47,27 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(auth_service.get
     db_user = auth_service.get_user(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Validate language
+    if user.language not in ["en", "hi"]:
+        raise HTTPException(status_code=400, detail="Language must be 'en' or 'hi'")
+
+    provider = (user.translation_provider or "libretranslate").lower()
+    if provider not in SUPPORTED_TRANSLATION_PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unsupported translation provider")
+    if not translation_service.provider_available(provider):
+        raise HTTPException(
+            status_code=400,
+            detail="Requested translation provider is not available. Please contact support.",
+        )
+    
     hashed_password = auth_service.get_password_hash(user.password)
-    db_user = models.User(username=user.username, hashed_password=hashed_password)
+    db_user = models.User(
+        username=user.username, 
+        hashed_password=hashed_password,
+        language=user.language,
+        translation_provider=provider,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -121,3 +144,26 @@ async def update_quick_facts(
         birthday=updated_facts.get("birthday"),
         phone=updated_facts.get("phone"),
     )
+
+
+@router.put("/users/me/language", response_model=schemas.User)
+async def update_language(
+    language_update: schemas.LanguageUpdate,
+    current_user=Depends(auth_service.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update user's language preference"""
+    # Validate language
+    if language_update.language not in ["en", "hi"]:
+        raise HTTPException(status_code=400, detail="Language must be 'en' or 'hi'")
+    
+    # Query the user in the current session to avoid session issues
+    db_user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db_user.language = language_update.language
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user

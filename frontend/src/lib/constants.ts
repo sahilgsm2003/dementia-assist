@@ -132,7 +132,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/token",
     REGISTER: "/users/",
-    CURRENT_USER: "/users/me",
+    CURRENT_USER: "/users/me/",
   },
   CHAT: {
     SEND_QUESTION: "/rag/chat/query",

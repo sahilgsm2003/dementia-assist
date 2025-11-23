@@ -1,4 +1,5 @@
 import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Heart, Shield, Home, Bell } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -8,6 +9,7 @@ import { useNotifications } from "@/context/NotificationContext";
 import { NotificationPanel } from "@/components/shared/NotificationPanel";
 
 export const Navbar = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { scrollY } = useScroll();
@@ -63,7 +65,7 @@ export const Navbar = () => {
               <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
             </motion.span>
             <span className="text-lg sm:text-xl font-semibold tracking-tight text-white group-hover:text-[#E02478] transition-colors">
-              Moments
+              {t("navbar.moments")}
             </span>
           </Link>
 
@@ -77,7 +79,7 @@ export const Navbar = () => {
                     className="hidden sm:inline-flex items-center gap-2 border-white/20 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
                   >
                     <Home className="h-4 w-4" />
-                    <span className="hidden md:inline">Home</span>
+                    <span className="hidden md:inline">{t("navbar.home")}</span>
                   </Button>
                 )}
                 <Button
@@ -98,14 +100,14 @@ export const Navbar = () => {
                   className="hidden sm:inline-flex items-center gap-2 border-red-500/50 bg-red-500/10 text-red-200 hover:bg-red-500/20"
                 >
                   <Shield className="h-4 w-4" />
-                  Emergency
+                  {t("navbar.emergency")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleLogout}
                   className="text-xs sm:text-sm"
                 >
-                  Log out
+                  {t("navbar.logout")}
                 </Button>
               </>
             ) : (

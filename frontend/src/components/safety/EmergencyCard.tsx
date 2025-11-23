@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { emergencyAPI } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 interface EmergencyCardProps {
   className?: string;
@@ -25,6 +26,7 @@ interface EmergencyInfo {
 }
 
 export const EmergencyCard = ({ className, compact = false }: EmergencyCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [emergencyInfo, setEmergencyInfo] = useState<EmergencyInfo>({
     name: "",
@@ -78,12 +80,12 @@ export const EmergencyCard = ({ className, compact = false }: EmergencyCardProps
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-white mb-1">
-                  Emergency Info
+                  {t("emergency.emergencyInfo")}
                 </h3>
                 <p className="text-xs text-white/70">
                   {emergencyInfo.name
-                    ? `Tap to view ${emergencyInfo.name}'s emergency information`
-                    : "Tap to set up emergency contacts and medical information"}
+                    ? t("emergency.tapToView", { name: emergencyInfo.name })
+                    : t("emergency.tapToSetup")}
                 </p>
               </div>
             </div>
@@ -101,22 +103,22 @@ export const EmergencyCard = ({ className, compact = false }: EmergencyCardProps
             <Shield className="h-6 w-6 text-red-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">Emergency Information</h3>
-            <p className="text-sm text-white/70">Critical information when needed most</p>
+            <h3 className="text-lg font-semibold text-white">{t("emergency.emergencyInformation")}</h3>
+            <p className="text-sm text-white/70">{t("emergency.criticalInfo")}</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-              My Name
+              {t("emergency.myName")}
             </p>
             <p className="text-lg font-semibold text-white">{emergencyInfo.name}</p>
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-              Emergency Contacts
+              {t("emergency.emergencyContacts")}
             </p>
             <div className="space-y-2">
               {emergencyInfo.emergencyContacts.map((contact, index) => (
@@ -142,27 +144,27 @@ export const EmergencyCard = ({ className, compact = false }: EmergencyCardProps
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-              Medical Information
+              {t("emergency.medicalInformation")}
             </p>
             <div className="space-y-2 text-sm text-white/80">
               <div>
-                <span className="text-white/60">Conditions: </span>
-                <span>{emergencyInfo.medicalConditions || "None listed"}</span>
+                <span className="text-white/60">{t("emergency.conditions")}: </span>
+                <span>{emergencyInfo.medicalConditions || t("emergency.noneListed")}</span>
               </div>
               <div>
-                <span className="text-white/60">Allergies: </span>
-                <span className="text-red-300">{emergencyInfo.allergies || "None listed"}</span>
+                <span className="text-white/60">{t("emergency.allergies")}: </span>
+                <span className="text-red-300">{emergencyInfo.allergies || t("emergency.noneListed")}</span>
               </div>
               <div>
-                <span className="text-white/60">Medications: </span>
-                <span>{emergencyInfo.medications || "None listed"}</span>
+                <span className="text-white/60">{t("emergency.medications")}: </span>
+                <span>{emergencyInfo.medications || t("emergency.noneListed")}</span>
               </div>
             </div>
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2">
-              Home Address
+              {t("emergency.homeAddress")}
             </p>
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 text-white/60 mt-0.5 flex-shrink-0" />
@@ -175,7 +177,7 @@ export const EmergencyCard = ({ className, compact = false }: EmergencyCardProps
           onClick={() => navigate("/safety")}
           className="w-full bg-red-500/20 text-red-200 border border-red-500/50 hover:bg-red-500/30"
         >
-          View Full Emergency Card
+          {t("emergency.viewFullCard")}
         </Button>
       </CardContent>
     </Card>

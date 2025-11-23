@@ -8,6 +8,7 @@ import {
 import { useEffect, Suspense } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { Layout } from "./components/Layout";
 import { Toaster } from "./components/ui/toaster";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -29,6 +30,7 @@ import {
     FamilySharingPage,
     MedicationsPage,
   } from "./components/lazy";
+import { SettingsPage } from "./components/SettingsPage";
 import { setNavigate } from "./lib/navigation";
 
 function AppRoutes() {
@@ -184,10 +186,9 @@ function AppRoutes() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <div className="container mx-auto px-6 py-8">
-                <h1 className="text-3xl font-semibold text-white">Settings</h1>
-                <p className="mt-4 text-white/70">Coming soon...</p>
-              </div>
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
+              </Suspense>
             </ProtectedRoute>
           }
         />
@@ -247,13 +248,15 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <NotificationProvider>
-          <Router>
-            <AppRoutes />
-            <Toaster />
-            <NotificationBanner />
-          </Router>
-        </NotificationProvider>
+        <LanguageProvider>
+          <NotificationProvider>
+            <Router>
+              <AppRoutes />
+              <Toaster />
+              <NotificationBanner />
+            </Router>
+          </NotificationProvider>
+        </LanguageProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

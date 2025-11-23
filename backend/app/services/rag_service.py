@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.services.vector_service import VectorService
 from app.models.models import ChatMessage, Document
 from app.services.document_service import process_pdf, store_document_chunks
+from app.services.translation_service import translation_service
 
 
 class RAGService:
@@ -22,6 +23,141 @@ class RAGService:
             print("Warning: GEMINI_API_KEY not set in configuration")
 
 
+    def _devanagari_to_latin(self, text: str) -> str:
+        """
+        Convert Devanagari script to Latin script (Hinglish) for processing.
+        This allows the fallback translation to work with Devanagari input.
+        """
+        # Basic Devanagari to Latin transliteration mapping
+        # Common Hindi words and their transliterations
+        devanagari_to_latin = {
+            # Common words
+            'मेरी': 'meri',
+            'मेरा': 'mera',
+            'मेरे': 'mere',
+            'कौन': 'kaun',
+            'क्या': 'kya',
+            'कहाँ': 'kahan',
+            'कब': 'kab',
+            'कैसे': 'kaise',
+            'बेटी': 'beti',
+            'बेटा': 'beta',
+            'पत्नी': 'patni',
+            'पति': 'pati',
+            'दवाई': 'dawai',
+            'घर': 'ghar',
+            'आज': 'aaj',
+            'नाम': 'naam',
+            'है': 'hai',
+            'हैं': 'hain',
+            'हूँ': 'hoon',
+            'हो': 'ho',
+            'कर': 'kar',
+            'करो': 'karo',
+            'ले': 'le',
+            'लेता': 'leta',
+            'लेती': 'leti',
+            'होता': 'hota',
+            'होती': 'hoti',
+            'बच्चे': 'bachche',
+            'परिवार': 'parivar',
+            'के': 'ke',
+            'की': 'ki',
+            'को': 'ko',
+            'से': 'se',
+            'में': 'mein',
+            'पर': 'par',
+            'तक': 'tak',
+            'का': 'ka',
+            'कि': 'ki',
+            'यह': 'yah',
+            'वह': 'vah',
+            'ये': 'ye',
+            'वे': 've',
+            'यहाँ': 'yahan',
+            'वहाँ': 'vahan',
+            'अब': 'ab',
+            'फिर': 'phir',
+            'भी': 'bhi',
+            'तो': 'to',
+            'या': 'ya',
+            'और': 'aur',
+            'लेकिन': 'lekin',
+            'क्योंकि': 'kyunki',
+            # Common phrases (for better matching)
+            'मेरी बेटी कौन है': 'meri beti kaun hai',
+            'मेरा बेटा कौन है': 'mera beta kaun hai',
+            'मेरी पत्नी कौन है': 'meri patni kaun hai',
+            'मेरा पति कौन है': 'mera pati kaun hai',
+        }
+        
+        # First, try to match whole phrases
+        clean_text = text.strip('।,?!.')
+        if clean_text in devanagari_to_latin:
+            return devanagari_to_latin[clean_text]
+        
+        # Try to match whole words
+        words = text.split()
+        transliterated_words = []
+        
+        for word in words:
+            # Remove common Devanagari punctuation/diacritics for matching
+            clean_word = word.strip('।,?!.')
+            if clean_word in devanagari_to_latin:
+                transliterated_words.append(devanagari_to_latin[clean_word])
+            else:
+                # If not found in dictionary, try to transliterate character by character
+                # This is a simplified approach - for production, use a proper library
+                transliterated = self._transliterate_characters(clean_word)
+                if transliterated:
+                    transliterated_words.append(transliterated)
+                else:
+                    # Keep original if we can't transliterate
+                    transliterated_words.append(word)
+        
+        return ' '.join(transliterated_words)
+    
+    def _transliterate_characters(self, word: str) -> str:
+        """
+        Basic character-by-character transliteration for Devanagari to Latin.
+        This is a simplified version - for production, consider using indic-transliteration library.
+        """
+        # Basic Devanagari character mappings (simplified)
+        char_map = {
+            'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo',
+            'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+            'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
+            'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
+            'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+            'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+            'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+            'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v',
+            'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+            'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gya',
+        }
+        
+        result = []
+        i = 0
+        while i < len(word):
+            # Check for 2-char combinations first (like क्ष, त्र, ज्ञ)
+            if i + 1 < len(word):
+                two_char = word[i:i+2]
+                if two_char in char_map:
+                    result.append(char_map[two_char])
+                    i += 2
+                    continue
+            
+            # Check single character
+            if word[i] in char_map:
+                result.append(char_map[word[i]])
+            elif ord(word[i]) < 0x0900 or ord(word[i]) > 0x097F:
+                # Not a Devanagari character, keep as is
+                result.append(word[i])
+            # Skip Devanagari diacritics/vowel signs
+            i += 1
+        
+        return ''.join(result) if result else None
+
     def preprocess_query(self, query: str) -> str:
         """
         Clean and preprocess the user query.
@@ -34,15 +170,156 @@ class RAGService:
         
         return query
 
+    def _fallback_hindi_translation(self, hindi_query: str) -> str:
+        """
+        Fallback keyword-based translation for common Hindi question patterns.
+        Used when translation API fails.
+        """
+        query_lower = hindi_query.lower().strip()
+        
+        # Common Hindi question patterns and their English equivalents
+        translations = {
+            # Family questions
+            "meri beti kon hai": "who is my daughter",
+            "meri beti kaun hai": "who is my daughter",
+            "mera beta kon hai": "who is my son",
+            "mera beta kaun hai": "who is my son",
+            "meri patni kon hai": "who is my wife",
+            "mera pati kon hai": "who is my husband",
+            "mere bachche": "my children",
+            "mere bachche kon hain": "who are my children",
+            "mera parivar": "my family",
+            "mere parivar ke bare mein": "about my family",
+            
+            # Medicine questions
+            "meri dawai": "my medicine",
+            "main kaun si dawai leta hoon": "what medicine do I take",
+            "meri dawai kya hai": "what is my medicine",
+            "dawai": "medicine",
+            "medication": "medication",
+            
+            # Location questions
+            "main kahan rehta hoon": "where do I live",
+            "mera ghar kahan hai": "where is my home",
+            "mera address": "my address",
+            
+            # Time/schedule questions
+            "aaj kya hai": "what is today",
+            "aaj ka schedule": "today's schedule",
+            "aaj kya karna hai": "what to do today",
+            "aaj ki appointment": "today's appointment",
+            
+            # General questions
+            "mera naam": "my name",
+            "mera naam kya hai": "what is my name",
+            "meri umar": "my age",
+            "meri umar kya hai": "what is my age",
+        }
+        
+        # Try exact match first
+        if query_lower in translations:
+            return translations[query_lower]
+        
+        # Try partial matches for common patterns
+        for hindi_pattern, english_translation in translations.items():
+            if hindi_pattern in query_lower:
+                return english_translation
+        
+        # Common word replacements
+        word_replacements = {
+            "meri": "my",
+            "mera": "my",
+            "mere": "my",
+            "kon": "who",
+            "kaun": "who",
+            "kya": "what",
+            "kahan": "where",
+            "kab": "when",
+            "kaise": "how",
+            "beti": "daughter",
+            "beta": "son",
+            "patni": "wife",
+            "pati": "husband",
+            "dawai": "medicine",
+            "ghar": "home",
+            "aaj": "today",
+            "naam": "name",
+        }
+        
+        # Try to translate word by word
+        words = query_lower.split()
+        translated_words = []
+        for word in words:
+            if word in word_replacements:
+                translated_words.append(word_replacements[word])
+            else:
+                # Keep original if we don't have translation
+                translated_words.append(word)
+        
+        translated = " ".join(translated_words)
+        
+        # If we got some translation, return it, otherwise return original
+        if translated != query_lower and any(word in word_replacements for word in words):
+            return translated
+        
+        return hindi_query
 
-    def retrieve_relevant_context(self, query: str, user_id: int, max_chunks: int = 2) -> List[Dict[str, Any]]:
+
+    def _is_devanagari(self, text: str) -> bool:
+        """
+        Check if text contains Devanagari script characters.
+        """
+        for char in text:
+            # Devanagari Unicode range: U+0900 to U+097F
+            if '\u0900' <= char <= '\u097F':
+                return True
+        return False
+
+    def retrieve_relevant_context(self, query: str, user_id: int, max_chunks: int = 2, language: str = "en") -> List[Dict[str, Any]]:
         """
         Retrieve relevant document chunks for the query.
         Optimized for speed: reduced default chunks from 3 to 2.
+        If query is in Hindi, translate to English for better document matching.
         """
         try:
+            # If query is in Hindi, translate to English for document search
+            # (documents are typically in English, so we need English query for vector search)
+            search_query = query
+            if language == "hi":
+                # Check if query is in Devanagari script
+                if self._is_devanagari(query):
+                    print(f"[RAG] Detected Devanagari script in query, transliterating to Latin script")
+                    # Transliterate Devanagari to Latin script (Hinglish) first
+                    latin_query = self._devanagari_to_latin(query)
+                    print(f"[RAG] Transliterated '{query}' to '{latin_query}'")
+                    query = latin_query  # Use transliterated version for further processing
+                
+                try:
+                    # Translate Hindi query to English for better document retrieval
+                    search_query = translation_service.translate(
+                        query,
+                        target_lang="en",
+                        source_lang="hi"
+                    )
+                    
+                    # Check if translation actually worked (not just returned original)
+                    if search_query == query or not search_query or search_query.strip() == "":
+                        # Translation failed, try fallback keyword translation
+                        print(f"[RAG] Translation API returned original text, trying keyword-based fallback")
+                        search_query = self._fallback_hindi_translation(query)
+                    else:
+                        print(f"[RAG] Translated Hindi query '{query}' to English '{search_query}' for document search")
+                except Exception as e:
+                    print(f"[RAG] Warning: Failed to translate query for search: {e}")
+                    print(f"[RAG] Attempting keyword-based fallback translation")
+                    # Try fallback keyword translation
+                    search_query = self._fallback_hindi_translation(query)
+                    if search_query == query:
+                        print(f"[RAG] Fallback translation also failed, using original query")
+            
             # Preprocess the query
-            processed_query = self.preprocess_query(query)
+            processed_query = self.preprocess_query(search_query)
+            print(f"[RAG] Searching documents with query: '{processed_query}' (user_id: {user_id})")
             
             # Search for similar documents (reduced to 2 chunks for faster responses)
             results = self.vector_service.search_similar_documents(
@@ -51,10 +328,19 @@ class RAGService:
                 k=max_chunks
             )
             
+            print(f"[RAG] Found {len(results)} document chunks")
+            if results:
+                for i, result in enumerate(results):
+                    print(f"[RAG] Chunk {i+1}: similarity={result.get('similarity_score', 'N/A'):.3f}, preview={result.get('content', '')[:100]}...")
+            else:
+                print(f"[RAG] No document chunks found. User may not have documents uploaded or query doesn't match any content.")
+            
             return results
             
         except Exception as e:
-            print(f"Error retrieving context: {e}")
+            print(f"[RAG] Error retrieving context: {e}")
+            import traceback
+            traceback.print_exc()
             return []
 
 
@@ -76,19 +362,65 @@ class RAGService:
         return formatted_context
 
 
-    def create_dementia_friendly_prompt(self, query: str, context: str) -> str:
+    def create_dementia_friendly_prompt(self, query: str, context: str, language: str = "en") -> str:
         """
         Create a prompt optimized for dementia care responses.
         Optimized for speed: shorter, more concise prompt.
         """
-        prompt = f"""You are a caring memory assistant. Answer clearly and warmly using the information provided.
+        language_instruction = ""
+        if language == "hi":
+            language_instruction = """IMPORTANT: Respond entirely in Hindi (हिंदी). Use Devanagari script. 
+CRITICAL: Avoid using "है।" (hai with period) at the end of sentences as it causes TTS pronunciation issues. 
+Instead, use alternatives like:
+- "है" (without period)
+- "हैं" (plural form when appropriate)
+- "होता है" or "होती है" (for "happens/is")
+- Rephrase sentences to avoid ending with "है।"
+Example: Instead of "यह सही है।" use "यह सही है" or "यह सही होता है" """
+        else:
+            language_instruction = "IMPORTANT: Respond entirely in English. "
+        
+        has_context = context and "No relevant information" not in context
+        
+        if has_context:
+            prompt = f"""You are a caring memory assistant. Answer clearly and warmly using the information provided.
 
-INFORMATION:
+{language_instruction}
+
+INFORMATION FROM DOCUMENTS:
 {context}
 
 QUESTION: {query}
 
-Provide a clear, warm response in simple language. Use natural paragraph breaks. Be reassuring."""
+Provide a clear, warm response using the information provided. Use simple language. Be reassuring and helpful."""
+        else:
+            # When no context is found, be more helpful
+            if language == "hi":
+                prompt = f"""आप एक देखभाल करने वाला मेमोरी असिस्टेंट हैं। उपयोगकर्ता का प्रश्न: {query}
+
+{language_instruction}
+
+नोट: दस्तावेज़ों में इस प्रश्न से संबंधित जानकारी नहीं मिली है।
+
+कृपया उपयोगकर्ता को बताएं कि:
+1. आपको उनके दस्तावेज़ों में इस जानकारी के बारे में कुछ नहीं मिला
+2. अगर उनके पास इस जानकारी वाला कोई दस्तावेज़ है, तो वे उसे अपलोड कर सकते हैं
+3. आप उनकी मदद करने के लिए हमेशा तैयार हैं
+
+दयालु और सहायक भाषा में उत्तर दें। ध्यान दें: "है।" का उपयोग न करें, इसके बजाय "है" या "हैं" का उपयोग करें।"""
+            else:
+                prompt = f"""You are a caring memory assistant. The user asked: {query}
+
+{language_instruction}
+
+NOTE: No information related to this question was found in the documents.
+
+Please tell the user:
+1. You couldn't find this information in their documents
+2. If they have a document with this information, they can upload it
+3. You're always ready to help them
+
+Respond in a kind and helpful manner."""
         
         return prompt
 
@@ -96,10 +428,16 @@ Provide a clear, warm response in simple language. Use natural paragraph breaks.
     def format_response_text(self, response: str) -> str:
         """
         Clean and format the response text for better readability.
+        Also fixes problematic Hindi phrases for better TTS pronunciation.
         """
         # Remove any remaining markdown formatting
         response = response.replace('**', '')
         response = response.replace('*', '')
+        
+        # Fix problematic Hindi phrases for better TTS pronunciation
+        # Replace "है।" (hai with period) which is often mispronounced
+        # Use alternatives that sound more natural
+        response = self._fix_hindi_tts_issues(response)
         
         # Clean up extra whitespace
         lines = [line.strip() for line in response.split('\n') if line.strip()]
@@ -115,6 +453,32 @@ Provide a clear, warm response in simple language. Use natural paragraph breaks.
                 formatted_lines.append(line)
         
         return '\n'.join(formatted_lines).strip()
+
+    def _fix_hindi_tts_issues(self, text: str) -> str:
+        """
+        Fix common Hindi TTS pronunciation issues by replacing problematic phrases.
+        Specifically fixes "है।" which is often mispronounced by TTS engines.
+        """
+        # Replace "है।" (hai with period) with "है" (without period)
+        # The period after "है" causes TTS pronunciation issues
+        # We'll remove the period and let the sentence structure handle the pause
+        
+        # Use regex to replace all instances of "है।" with "है"
+        # This handles various spacing scenarios
+        # Pattern: "है" followed by "।" (Devanagari danda/period)
+        # Match with optional whitespace around it
+        text = re.sub(r'है\s*।', 'है', text)
+        text = re.sub(r'हैं\s*।', 'हैं', text)
+        
+        # Also handle cases where there might be multiple spaces
+        text = re.sub(r'है\s+।', 'है', text)
+        text = re.sub(r'हैं\s+।', 'हैं', text)
+        
+        # Additional fix: Replace "है।" at end of lines (before newline)
+        text = re.sub(r'है\s*।\s*\n', 'है\n', text)
+        text = re.sub(r'हैं\s*।\s*\n', 'हैं\n', text)
+        
+        return text
 
     def _extract_response_text(self, response: Any) -> str:
         """
@@ -224,19 +588,32 @@ Provide a clear, warm response in simple language. Use natural paragraph breaks.
             return "I'm sorry, I'm having trouble accessing my knowledge right now. Please try again in a moment."
 
 
-    def answer_question(self, question: str, user_id: int, db: Session) -> Dict[str, Any]:
+    def answer_question(self, question: str, user_id: int, db: Session, language: str = "en") -> Dict[str, Any]:
         """
         Main function to answer a user's question using RAG.
         """
         try:
-            # Retrieve relevant context
-            context_results = self.retrieve_relevant_context(question, user_id)
+            # Check if user has any documents
+            document_count = db.query(Document).filter(Document.user_id == user_id).count()
+            print(f"[RAG] User {user_id} has {document_count} document(s)")
+            
+            # Retrieve relevant context (translates Hindi queries to English for search)
+            context_results = self.retrieve_relevant_context(question, user_id, language=language)
             
             # Format context for the prompt
             formatted_context = self.format_context_for_prompt(context_results)
             
-            # Create the prompt
-            prompt = self.create_dementia_friendly_prompt(question, formatted_context)
+            # If no documents exist, add a helpful note
+            if document_count == 0:
+                if language == "hi":
+                    formatted_context = "नोट: उपयोगकर्ता के पास अभी तक कोई दस्तावेज़ अपलोड नहीं है।"
+                else:
+                    formatted_context = "NOTE: The user has not uploaded any documents yet."
+            
+            # Create the prompt with language preference (use original question, not translated)
+            prompt = self.create_dementia_friendly_prompt(question, formatted_context, language)
+            
+            print(f"[RAG] Generated prompt (first 200 chars): {prompt[:200]}...")
             
             # Get response from Gemini
             response = self.call_gemini_chat(prompt)
@@ -352,6 +729,70 @@ Provide a clear, warm response in simple language. Use natural paragraph breaks.
             print(f"Error getting chat history: {e}")
             return []
 
+
+    def generate_suggested_questions(self, user_id: int, db: Session, language: str = "en") -> List[str]:
+        """
+        Generate suggested questions based on user's documents.
+        """
+        try:
+            # Get recent documents to generate questions from
+            documents = db.query(Document).filter(
+                Document.user_id == user_id
+            ).order_by(Document.created_at.desc()).limit(3).all()
+            
+            if not documents:
+                # Return default questions if no documents
+                if language == "hi":
+                    return [
+                        "मैं दस्तावेज़ कैसे जोड़ूँ?",
+                        "आप मेरी क्या मदद कर सकते हैं?",
+                        "यह कैसे काम करता है?"
+                    ]
+                return [
+                    "How do I add documents?",
+                    "What can you help me with?",
+                    "How does this work?"
+                ]
+            
+            # Get document summaries/content to generate questions
+            context_parts = []
+            for doc in documents:
+                # Get a few chunks from each document
+                chunks = self.vector_service.search_similar_documents(
+                    "", # Empty query to get any chunks
+                    user_id,
+                    k=2,
+                    # We might need to filter by document_id if vector service supports it,
+                    # but for now getting any chunks is fine for general context
+                )
+                for chunk in chunks:
+                    context_parts.append(chunk.get('content', '')[:200])
+            
+            context = "\n".join(context_parts)
+            
+            prompt = f"""Based on the following document excerpts, generate 5 simple, personal questions that a user might ask about this information.
+            
+            DOCUMENTS:
+            {context}
+            
+            Generate 5 short, simple questions in {language} language.
+            Return ONLY the questions, one per line.
+            """
+            
+            response = self.call_gemini_chat(prompt)
+            questions = [q.strip('- ').strip() for q in response.split('\n') if q.strip()]
+            
+            # Filter and limit to 5
+            questions = [q for q in questions if len(q) > 5][:5]
+            
+            return questions
+            
+        except Exception as e:
+            print(f"Error generating suggested questions: {e}")
+            # Return defaults on error
+            if language == "hi":
+                return ["मेरी दवाई क्या है?", "आज का क्या प्लान है?", "मेरा परिवार कहां है?"]
+            return ["What medicine do I take?", "What's happening today?", "Tell me about my family"]
 
     def delete_user_knowledge_base(self, user_id: int, db: Session):
         """

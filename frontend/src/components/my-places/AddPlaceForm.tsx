@@ -9,8 +9,7 @@ import { MapPin, Navigation } from "lucide-react";
 import { locationsAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
-
-const MAX_ACCEPTABLE_ACCURACY_METERS = 1000;
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface AddPlaceFormProps {
   onSuccess: () => void;
@@ -18,6 +17,7 @@ interface AddPlaceFormProps {
 }
 
 export const AddPlaceForm = ({ onSuccess, onCancel }: AddPlaceFormProps) => {
+  const { getCurrentLocation } = useGeolocation();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -27,74 +27,65 @@ export const AddPlaceForm = ({ onSuccess, onCancel }: AddPlaceFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
-  const handleGetCurrentLocation = () => {
-    if (!("geolocation" in navigator)) {
-      toast({
-        title: "Error",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleGetCurrentLocation = async () => {
     setIsGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const accuracyValue =
-          typeof position.coords.accuracy === "number"
-            ? position.coords.accuracy
-            : null;
+    
+    toast({
+      title: "Getting precise location...",
+      description: "Please wait while we get the most accurate GPS reading. Move near a window or go outdoors for better accuracy.",
+      duration: 5000,
+    });
 
-        if (accuracyValue && accuracyValue > MAX_ACCEPTABLE_ACCURACY_METERS) {
-          setIsGettingLocation(false);
-          toast({
-            title: "Location accuracy is low",
-            description:
-              "We couldn't get a precise location. Please move closer to a window or go outdoors and try again.",
-            variant: "destructive",
-          });
-          return;
+    try {
+      let updateCount = 0;
+      const result = await getCurrentLocation({
+        targetAccuracy: 50,
+        maxWaitTime: 15000,
+        minAcceptableAccuracy: 5000,
+        onProgress: (accuracy) => {
+          updateCount++;
+          if (updateCount % 3 === 0) {
+            toast({
+              title: "Refining location...",
+              description: `Current accuracy: ±${Math.round(accuracy)}m. Waiting for better GPS signal...`,
+              duration: 2000,
+            });
+          }
         }
+      });
 
-        setFormData({
-          ...formData,
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6),
+      setFormData({
+        ...formData,
+        latitude: result.lat.toFixed(6),
+        longitude: result.lng.toFixed(6),
+      });
+
+      if (result.accuracy <= 50) {
+        toast({
+          title: "Precise location found!",
+          description: `Accuracy: ±${Math.round(result.accuracy)} meters`,
         });
-        setIsGettingLocation(false);
+      } else if (result.accuracy <= 1000) {
         toast({
           title: "Location found",
-          description: accuracyValue
-            ? `Accuracy ±${Math.round(accuracyValue)} meters`
-            : "Your current location has been added",
+          description: `Accuracy: ±${Math.round(result.accuracy)} meters. For better accuracy, move near a window or go outdoors.`,
         });
-      },
-      (error) => {
-        setIsGettingLocation(false);
-        let errorMessage = "Could not get your location";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location permission denied. Please enable location access in your browser settings and try again.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information unavailable. Please try again or enter coordinates manually.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out. Please try again.";
-            break;
-        }
+      } else {
         toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
+          title: "Location found (low accuracy)",
+          description: `Accuracy: ±${Math.round(result.accuracy)} meters. Consider moving to an area with better GPS signal.`,
+          variant: "default",
         });
-      },
-      {
-        enableHighAccuracy: true, // Request the most accurate location available
-        timeout: 20000, // 20 seconds timeout
-        maximumAge: 0, // Do not use cached positions
       }
-    );
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Could not get location",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingLocation(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

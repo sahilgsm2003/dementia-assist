@@ -17,3 +17,4 @@ face-recognition
 Pillow
 cmake
 setuptools
+httpx

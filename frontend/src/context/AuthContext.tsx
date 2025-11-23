@@ -6,10 +6,13 @@ import React, {
   ReactNode,
 } from "react";
 import { authAPI } from "../services/api";
+import i18n from "../i18n/config";
 
 interface User {
   id: number;
   username: string;
+  language?: string;
+  translation_provider?: string;
 }
 
 interface AuthContextType {
@@ -19,7 +22,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string, language?: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +39,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!token && !!user;
 
+  const persistTranslationProvider = (provider?: string | null) => {
+    localStorage.setItem("translation_provider", provider || "libretranslate");
+  };
+
   // Check for existing token on app load
   useEffect(() => {
     const initializeAuth = async () => {
@@ -44,11 +52,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (storedToken && storedUser) {
         try {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser) as User;
+          setUser(parsedUser);
+          persistTranslationProvider(parsedUser.translation_provider);
 
           // Verify token is still valid by fetching current user
           const currentUser = await authAPI.getCurrentUser();
           setUser(currentUser);
+          persistTranslationProvider(currentUser.translation_provider);
         } catch (error) {
           console.error("Token validation failed:", error);
           // Clear invalid token and user data
@@ -81,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Fetch and store user data
       const userData = await authAPI.getCurrentUser();
       localStorage.setItem("user", JSON.stringify(userData));
+      persistTranslationProvider(userData.translation_provider);
       setUser(userData);
     } catch (error) {
       console.error("Login failed:", error);
@@ -88,9 +100,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (username: string, password: string) => {
+  const register = async (username: string, password: string, language: string = "en") => {
     try {
-      await authAPI.register(username, password);
+      // Clear any existing tokens before registration to avoid auth conflicts
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+      
+      await authAPI.register(username, password, language);
       // Auto-login after successful registration
       await login(username, password);
     } catch (error) {
@@ -102,8 +120,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
+    localStorage.removeItem("translation_provider");
+    localStorage.setItem("i18nextLng", "en");
+    i18n.changeLanguage("en");
     setToken(null);
     setUser(null);
+  };
+
+  const refreshUser = async () => {
+    if (token) {
+      try {
+        const userData = await authAPI.getCurrentUser();
+        localStorage.setItem("user", JSON.stringify(userData));
+        persistTranslationProvider(userData.translation_provider);
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to refresh user:", error);
+      }
+    }
   };
 
   const value: AuthContextType = {
@@ -114,6 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     register,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

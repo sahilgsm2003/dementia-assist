@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -9,48 +10,49 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const features = [
-  {
-    icon: Users,
-    title: "Who is this person?",
-    description: "Identify family members instantly",
-  },
-  {
-    icon: Calendar,
-    title: "What medicine do I take?",
-    description: "Gentle medication reminders",
-  },
-  {
-    icon: Calendar,
-    title: "When is my appointment?",
-    description: "Daily schedule at a glance",
-  },
-  {
-    icon: Shield,
-    title: "Where am I?",
-    description: "Stay oriented with safe places",
-  },
-];
-
-const steps = [
-  {
-    step: "1",
-    title: "Add people & information",
-    description: "Set up in minutes",
-  },
-  {
-    step: "2",
-    title: "Ask questions naturally",
-    description: "Get instant answers",
-  },
-  {
-    step: "3",
-    title: "Receive gentle reminders",
-    description: "Stay on track daily",
-  },
-];
-
 export const LandingPage = () => {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: Users,
+      title: t("landing.whoIsThisPerson"),
+      description: t("landing.whoIsThisPersonDesc"),
+    },
+    {
+      icon: Calendar,
+      title: t("landing.whatMedicine"),
+      description: t("landing.whatMedicineDesc"),
+    },
+    {
+      icon: Calendar,
+      title: t("landing.whenAppointment"),
+      description: t("landing.whenAppointmentDesc"),
+    },
+    {
+      icon: Shield,
+      title: t("landing.whereAmI"),
+      description: t("landing.whereAmIDesc"),
+    },
+  ];
+
+  const steps = [
+    {
+      step: "1",
+      title: t("landing.step1Title"),
+      description: t("landing.step1Desc"),
+    },
+    {
+      step: "2",
+      title: t("landing.step2Title"),
+      description: t("landing.step2Desc"),
+    },
+    {
+      step: "3",
+      title: t("landing.step3Title"),
+      description: t("landing.step3Desc"),
+    },
+  ];
   return (
     <div className="space-y-12 md:space-y-20 pb-12 md:pb-16">
       {/* Hero Section */}
@@ -67,7 +69,7 @@ export const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight text-white text-balance px-2"
           >
-            Help your loved one remember what matters most
+            {t("landing.heroTitle")}
           </motion.h1>
           
           <motion.p
@@ -76,7 +78,7 @@ export const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="mx-auto max-w-xl text-base md:text-lg text-white/70 leading-relaxed px-4"
           >
-            A memory care companion for people with dementia and their caregivers
+            {t("landing.heroDescription")}
           </motion.p>
 
           <motion.div
@@ -88,11 +90,11 @@ export const LandingPage = () => {
             <Link to="/register" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto h-12 md:h-14 px-8 md:px-10 text-base md:text-lg font-semibold">
                 <Heart className="mr-2 h-5 w-5" />
-                Get started for free
+                {t("landing.getStarted")}
               </Button>
             </Link>
             <p className="text-sm text-white/60">
-              Set up in minutes
+              {t("landing.setupMinutes")}
             </p>
           </motion.div>
         </motion.div>
@@ -108,7 +110,7 @@ export const LandingPage = () => {
           className="mx-auto max-w-4xl space-y-6 md:space-y-8"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center text-balance px-2">
-            When memory fades, connection shouldn't
+            {t("landing.whenMemoryFades")}
           </h2>
 
           <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
@@ -158,7 +160,7 @@ export const LandingPage = () => {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center text-balance px-2"
           >
-            How it works
+            {t("landing.howItWorks")}
           </motion.h2>
 
           <div className="grid gap-6 sm:gap-8 md:grid-cols-3">

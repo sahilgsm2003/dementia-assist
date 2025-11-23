@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
+import { PlaceMap } from "./PlaceMap";
 
 interface Place {
   id: number;
@@ -83,6 +84,17 @@ export const PlaceCard = ({ place, isHome, onView, onDelete }: PlaceCardProps) =
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Map Preview */}
+          <div className="mb-4 rounded-lg overflow-hidden border border-white/10">
+            <PlaceMap
+              latitude={place.latitude}
+              longitude={place.longitude}
+              height="200px"
+              zoom={14}
+              showMarker={true}
+            />
           </div>
 
           <div className="space-y-2 text-sm text-white/60 mb-4">

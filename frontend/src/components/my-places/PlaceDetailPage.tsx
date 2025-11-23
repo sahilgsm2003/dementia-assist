@@ -8,6 +8,7 @@ import { locationsAPI } from "@/services/api";
 import { formatShortDate } from "@/lib/dateUtils";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { PlaceMap } from "./PlaceMap";
 
 interface Place {
   id: number;
@@ -52,9 +53,27 @@ export const PlaceDetailPage = () => {
   const handleGetDirections = () => {
     if (!place) return;
 
+    // Hardcoded home location: JIIT Noida Sector 62
+    const HOME_LAT = 28.631657;
+    const HOME_LNG = 77.370916;
+
+    // Check if this place is home
+    const isHomePlace =
+      place.name.toLowerCase().includes("home") ||
+      place.name.toLowerCase().includes("house") ||
+      (Math.abs(place.latitude - HOME_LAT) < 0.001 && Math.abs(place.longitude - HOME_LNG) < 0.001);
+
+    if (isHomePlace) {
+      toast({
+        title: "You are already very close!",
+        description: "About 200 meters away.",
+      });
+      return;
+    }
+
     setIsGettingDirections(true);
-    // Open Google Maps with directions
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
+    // Open Google Maps with directions from JIIT to the place
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${HOME_LAT},${HOME_LNG}&destination=${place.latitude},${place.longitude}`;
     window.open(url, "_blank");
     setIsGettingDirections(false);
   };
@@ -86,28 +105,6 @@ export const PlaceDetailPage = () => {
     }
   };
 
-  const handleMarkAsHere = async () => {
-    if (!place) return;
-
-    try {
-      await locationsAPI.updateLiveLocation({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        accuracy: null,
-      });
-      toast({
-        title: "Location updated",
-        description: `Marked "${place.name}" as your current location`,
-      });
-    } catch (error) {
-      console.error("Failed to update location", error);
-      toast({
-        title: "Error",
-        description: getErrorMessage(error),
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -223,15 +220,6 @@ export const PlaceDetailPage = () => {
             {isGettingDirections ? "Opening..." : "Get Directions"}
           </Button>
           <Button
-            onClick={handleMarkAsHere}
-            variant="outline"
-            size="lg"
-            className="rounded-full border-white/20 bg-white/5 px-8 py-6 text-base font-semibold text-white hover:bg-white/10"
-          >
-            <MapPin className="mr-2 h-5 w-5" />
-            I'm here
-          </Button>
-          <Button
             onClick={handleShareLocation}
             variant="outline"
             size="lg"
@@ -254,13 +242,12 @@ export const PlaceDetailPage = () => {
         <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardContent className="p-0">
             <div className="h-[400px] overflow-hidden rounded-2xl border border-white/10">
-              <iframe
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                style={{ border: 0 }}
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6d-s6L4XZ1k&q=${place.latitude},${place.longitude}&zoom=15`}
-                allowFullScreen
+              <PlaceMap
+                latitude={place.latitude}
+                longitude={place.longitude}
+                height="400px"
+                zoom={15}
+                showMarker={true}
               />
             </div>
           </CardContent>

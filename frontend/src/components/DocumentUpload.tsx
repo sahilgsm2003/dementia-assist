@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Upload, CheckCircle, AlertCircle, FileText, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +28,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   isUploading = false,
   className = "",
 }) => {
+  const { t, i18n } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "success" | "error"
@@ -57,7 +59,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       handleFileUpload(pdfFile);
     } else {
       setUploadStatus("error");
-      setUploadMessage("Please upload a PDF file");
+      setUploadMessage(t("documents.pleaseUploadPDF"));
       setTimeout(() => setUploadStatus("idle"), 3000);
     }
   };
@@ -74,7 +76,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       setUploadStatus("idle");
       await onUpload(file);
       setUploadStatus("success");
-      setUploadMessage(`Successfully uploaded: ${file.name}`);
+      setUploadMessage(`${t("documents.successfullyUploaded")}: ${file.name}`);
       setTimeout(() => setUploadStatus("idle"), 3000);
 
       // Reset file input
@@ -83,7 +85,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       }
     } catch (error) {
       setUploadStatus("error");
-      setUploadMessage("Failed to upload file. Please try again.");
+      setUploadMessage(t("documents.failedToUpload"));
       setTimeout(() => setUploadStatus("idle"), 3000);
     }
   };
@@ -99,14 +101,14 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     try {
       await onDelete(documentToDelete.id);
       toast({
-        title: "Success",
-        description: `"${documentToDelete.filename}" deleted successfully`,
+        title: t("common.success"),
+        description: `"${documentToDelete.filename}" ${t("common.deleted").toLowerCase()}`,
       });
     } catch (error) {
       console.error("Failed to delete document", error);
       toast({
-        title: "Error",
-        description: "Failed to delete document. Please try again.",
+        title: t("common.error"),
+        description: t("documents.failedToUpload"),
         variant: "destructive",
       });
     } finally {
@@ -115,13 +117,17 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    try {
+      return new Date(dateString).toLocaleString(i18n.language || "en", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (
@@ -129,9 +135,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white">Upload a document</h3>
+            <h3 className="text-lg font-semibold text-white">{t("documents.uploadDocument")}</h3>
             <p className="text-sm text-white/60">
-              Add diaries, notes, or care plans so the assistant can respond with personal context.
+              {t("documents.addDocumentDescription")}
             </p>
           </div>
           <button
@@ -139,8 +145,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             disabled={isUploading}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Upload className="h-4 w-4" />
-            Load demo library
+            {isUploading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {isUploading ? t("common.loading") : t("documents.initializeDemo")}
           </button>
         </div>
 
@@ -162,12 +172,15 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         )}
 
         <div
-          className={`mt-6 rounded-2xl border border-dashed border-white/20 bg-black/20 p-8 text-center transition ${
-            dragOver ? "border-[#E02478] bg-[#E02478]/10" : ""
+          className={`mt-6 rounded-2xl border-2 border-dashed p-8 text-center transition duration-200 ease-in-out cursor-pointer ${
+            dragOver 
+              ? "border-[#E02478] bg-[#E02478]/10 scale-[1.02]" 
+              : "border-white/20 bg-black/20 hover:border-white/30 hover:bg-black/30"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
         >
           <input
             ref={fileInputRef}
@@ -177,21 +190,15 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             className="hidden"
           />
           <div className="flex flex-col items-center gap-3 text-white/70">
-            <Upload className="h-10 w-10 text-[#E02478]" />
-            <div>
-              <p className="text-sm font-medium text-white">
-                Drop a PDF here, or{" "}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="underline decoration-[#E02478] decoration-2 underline-offset-4 transition hover:text-white disabled:cursor-not-allowed"
-                >
-                  browse your files
-                </button>
+            <div className={`rounded-full p-4 transition-colors ${dragOver ? "bg-[#E02478]/20" : "bg-white/5"}`}>
+              <Upload className={`h-10 w-10 transition-colors ${dragOver ? "text-[#E02478]" : "text-white/50"}`} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium text-white">
+                {dragOver ? t("documents.dropToUpload") : t("documents.dragDropPDF")}
               </p>
-              <p className="text-xs text-white/50">
-                Supports PDF files up to 10MB. Each upload replaces existing context.
+              <p className="text-sm text-white/50">
+                {t("documents.clickToSelect")}
               </p>
             </div>
           </div>
@@ -202,10 +209,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wide text-white/70">
-              Library
+              {t("documents.yourDocuments")}
             </h4>
             <p className="text-sm text-white/60">
-              {documents.length} document{documents.length === 1 ? "" : "s"} available
+              {documents.length} {documents.length === 1 ? t("askMoments.documentsLoaded") : t("askMoments.documentsLoadedPlural")}
             </p>
           </div>
         </div>
@@ -214,7 +221,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center text-white/60">
             <FileText className="h-10 w-10 text-white/30" />
             <p className="text-sm">
-              No documents yet. Upload a PDF to give the assistant personal context to work with.
+              {t("documents.noDocuments")}
+            </p>
+            <p className="text-xs text-white/50">
+              {t("documents.uploadFirst")}
             </p>
           </div>
         ) : (
@@ -231,17 +241,17 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-white">{doc.filename}</p>
                     <p className="text-xs uppercase tracking-wide text-white/40">
-                      Uploaded {formatDate(doc.created_at)}
+                      {t("documents.uploadedOn")} {formatDate(doc.created_at)}
                     </p>
                     {doc.chunks_count ? (
-                      <p className="text-xs text-white/40">{doc.chunks_count} extracted sections</p>
+                      <p className="text-xs text-white/40">{doc.chunks_count} {t("documents.chunks")}</p>
                     ) : null}
                   </div>
                 </div>
                 <button
                   onClick={() => handleDeleteDocument(doc)}
                   className="rounded-full p-2 text-white/40 transition hover:bg-white/10 hover:text-red-300"
-                  title="Delete document"
+                  title={t("documents.deleteDocument")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -254,10 +264,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete Document"
-        description={`Are you sure you want to delete "${documentToDelete?.filename}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t("documents.deleteDocument")}
+        description={`${t("documents.deleteConfirm")} "${documentToDelete?.filename}"? ${t("documents.deleteWarning")}`}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         variant="destructive"
         onConfirm={confirmDelete}
       />

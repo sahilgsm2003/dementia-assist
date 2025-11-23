@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { MapPin, Sparkles, Plus } from "lucide-react";
 import { PlacesList } from "./PlacesList";
 import { MapView } from "./MapView";
@@ -28,6 +29,7 @@ interface LiveLocation {
 }
 
 export const MyPlacesPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [places, setPlaces] = useState<Place[]>([]);
   const [liveLocation, setLiveLocation] = useState<LiveLocation | null>(null);
@@ -82,7 +84,7 @@ export const MyPlacesPage = () => {
           className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 ring-1 ring-white/15 backdrop-blur"
         >
           <Sparkles className="h-4 w-4 text-[#E02478]" />
-          My Places
+          {t("myPlaces.title")}
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
@@ -90,10 +92,10 @@ export const MyPlacesPage = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-3xl font-semibold tracking-tight text-white md:text-4xl"
         >
-          Familiar places, always close at hand.
+          {t("myPlaces.heading")}
         </motion.h1>
         <p className="mx-auto max-w-2xl text-base text-white/70">
-          Keep track of important locations, find your way home, and share your location with loved ones.
+          {t("myPlaces.description")}
         </p>
       </div>
 
@@ -103,14 +105,14 @@ export const MyPlacesPage = () => {
           <DialogTrigger asChild>
             <Button className="rounded-full bg-[#E02478] px-6 py-6 text-base font-semibold text-white hover:bg-[#E02478]/85">
               <Plus className="mr-2 h-5 w-5" />
-              Add Place
+              {t("myPlaces.addPlace")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add a Place</DialogTitle>
+              <DialogTitle>{t("myPlaces.addPlaceTitle")}</DialogTitle>
               <DialogDescription>
-                Add a familiar location to your places
+                {t("myPlaces.addPlaceDescription")}
               </DialogDescription>
             </DialogHeader>
             <AddPlaceForm
@@ -126,11 +128,11 @@ export const MyPlacesPage = () => {
         <TabsList className="bg-white/10">
           <TabsTrigger value="list" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            Places List
+            {t("myPlaces.placesList")}
           </TabsTrigger>
           <TabsTrigger value="map" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            Map View
+            {t("myPlaces.mapView")}
           </TabsTrigger>
         </TabsList>
 
@@ -144,13 +146,17 @@ export const MyPlacesPage = () => {
           />
         </TabsContent>
 
-        <TabsContent value="map">
-          <MapView
-            places={places}
-            liveLocation={liveLocation}
-            onPlaceAdded={handlePlaceAdded}
-            onPlaceDeleted={handlePlaceDeleted}
-          />
+        <TabsContent value="map" forceMount>
+          <div style={{ display: activeTab === "map" ? "block" : "none" }}>
+            <MapView
+              key="map-view"
+              places={places}
+              liveLocation={liveLocation}
+              onPlaceAdded={handlePlaceAdded}
+              onPlaceDeleted={handlePlaceDeleted}
+              isVisible={activeTab === "map"}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

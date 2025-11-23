@@ -8,6 +8,14 @@ export default defineConfig({
   server: {
     host: "0.0.0.0", // Allow access from network
     port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+        secure: false,
+      },
+    },
   },
   resolve: {
     alias: {
@@ -21,7 +29,7 @@ export default defineConfig({
           // Vendor chunks
           "react-vendor": ["react", "react-dom", "react-router-dom"],
           "ui-vendor": ["framer-motion", "lucide-react"],
-          "map-vendor": ["leaflet", "react-leaflet"],
+          "map-vendor": ["mapbox-gl"],
           // Feature chunks
           "chat": [
             "./src/components/ask-moments",

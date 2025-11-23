@@ -1,19 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Send,
   Bot,
   User,
   AlertCircle,
-  CheckCircle,
-  Clock,
   Mic,
   MicOff,
   Volume2,
   VolumeX,
-  Sparkles,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { SuggestedQuestions } from "./SuggestedQuestions";
 import { useAuth } from "@/context/AuthContext";
 import { formatTodaysDate } from "@/lib/dateUtils";
 import { toast } from "@/hooks/use-toast";
@@ -62,6 +59,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Track if welcome message has been added
   const welcomeMessageAddedRef = useRef(false);
 
+  const { t, i18n } = useTranslation();
+  
   // Get user name for personalization
   let userName = "there";
   if (user && typeof user === "object" && "username" in user) {
@@ -69,16 +68,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return t("chat.goodMorning");
+    if (hour < 18) return t("chat.goodAfternoon");
+    return t("chat.goodEvening");
   };
 
   const getWelcomeMessage = () => {
     if (!hasKnowledgeBase) {
-      return `Hello! I'm Moments, your personal memory assistant. I'm here to help you remember important details from your life.\n\nTo get started, please upload a document (like a diary, care plan, or notes) so I can help answer your questions.\n\nWhat would you like to know?`;
+      return t("chat.welcomeNoDocs");
     }
-    return `${getGreeting()}, ${userName}! I'm Moments, your personal memory assistant. I'm here to help you remember important details from your life.\n\nI can help you with questions about:\n• Family members and relationships\n• Important dates and celebrations\n• Health information and medications\n• Daily routines and schedule\n• Where you live and important places\n\nWhat would you like to know today?`;
+    return `${getGreeting()}, ${userName}! ${t("chat.welcomeWithDocs")}`;
   };
 
   // Add welcome message if no messages exist (only once)
@@ -126,12 +125,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(true);
-
-  // Update showSuggestions based on message count
-  useEffect(() => {
-    setShowSuggestions(messages.length <= 1);
-  }, [messages.length]);
 
   // Text-to-speech state
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -224,7 +217,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Select the best available voice for natural-sounding speech
   const selectBestVoice = (
-    voices: SpeechSynthesisVoice[]
+    voices: SpeechSynthesisVoice[],
+    targetLanguage: string
   ): SpeechSynthesisVoice | null => {
     if (!voices || voices.length === 0) return null;
 
@@ -242,22 +236,97 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       "susan",
     ];
 
-    const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
+    // For Hindi, prioritize Indian voices and specific high-quality voice names
+    const hindiIndianKeywords = [
+      "india",
+      "indian",
+      "hi-in",
+      "hindi-india",
+      "hindi-in",
+    ];
+    
+    // Specific high-quality Hindi voice names (in priority order)
+    const preferredHindiVoices = [
+      "kalpana",        // Microsoft Kalpana - very natural female Hindi voice
+      "madhur",         // Microsoft Madhur - natural male Hindi voice
+      "google हिन्दी",  // Google Hindi (Devanagari)
+      "google hindi",   // Google Hindi (Latin)
+      "wavenet",        // Google Wavenet voices (high quality)
+      "neural2",        // Google Neural2 voices (very natural)
+      "neural",         // Neural voices in general
+    ];
 
-    if (englishVoices.length === 0) {
-      return voices[0] || null;
+    const targetPrefix = targetLanguage === "hi" ? "hi" : "en";
+    
+    // For Hindi, first try to find Indian Hindi voices (hi-IN)
+    let localeVoices: SpeechSynthesisVoice[] = [];
+    if (targetLanguage === "hi") {
+      // Prioritize Indian Hindi voices (hi-IN)
+      const indianHindiVoices = voices.filter((v) =>
+        v.lang?.toLowerCase().startsWith("hi-in") || 
+        v.lang?.toLowerCase() === "hi-in"
+      );
+      
+      // Also check for generic Hindi voices (hi)
+      const genericHindiVoices = voices.filter((v) =>
+        v.lang?.toLowerCase().startsWith("hi") && 
+        !v.lang?.toLowerCase().startsWith("hi-in")
+      );
+      
+      localeVoices = [...indianHindiVoices, ...genericHindiVoices];
+    } else {
+      // For English, filter by en prefix
+      localeVoices = voices.filter((v) =>
+        v.lang?.toLowerCase().startsWith(targetPrefix)
+      );
     }
+
+    const fallbackVoices =
+      targetPrefix === "en"
+        ? localeVoices
+        : voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
+    const candidateVoices =
+      localeVoices.length > 0
+        ? localeVoices
+        : fallbackVoices.length > 0
+        ? fallbackVoices
+        : voices;
 
     let bestVoice: SpeechSynthesisVoice | null = null;
     let bestScore = -1;
 
-    for (const voice of englishVoices) {
+    for (const voice of candidateVoices) {
       const nameLower = voice.name.toLowerCase();
+      const langLower = voice.lang?.toLowerCase() || "";
       let score = 0;
+
+      // For Hindi, heavily prioritize Indian voices and specific high-quality voices
+      if (targetLanguage === "hi") {
+        // Check if it's an Indian Hindi voice
+        if (langLower.startsWith("hi-in") || langLower === "hi-in") {
+          score += 100; // Very high priority for Indian Hindi voices
+        }
+        
+        // Prioritize specific known high-quality Hindi voices
+        for (let i = 0; i < preferredHindiVoices.length; i++) {
+          if (nameLower.includes(preferredHindiVoices[i])) {
+            score += (preferredHindiVoices.length - i) * 30; // Higher score for better voices
+            break;
+          }
+        }
+        
+        // Check for Indian keywords in voice name
+        for (const keyword of hindiIndianKeywords) {
+          if (nameLower.includes(keyword)) {
+            score += 50; // High priority for Indian keywords
+            break;
+          }
+        }
+      }
 
       for (let i = 0; i < preferredKeywords.length; i++) {
         if (nameLower.includes(preferredKeywords[i])) {
-          score = (preferredKeywords.length - i) * 10;
+          score += (preferredKeywords.length - i) * 10;
           break;
         }
       }
@@ -289,7 +358,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     }
 
-    return bestVoice || englishVoices[0] || null;
+    return bestVoice || candidateVoices[0] || null;
   };
 
   // Initialize speech recognition and synthesis
@@ -307,7 +376,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.lang = "en-US";
+        const speechLocale = i18n.language === "hi" ? "hi-IN" : "en-US";
+        recognition.lang = speechLocale;
 
         recognition.onstart = () => {
           setIsListening(true);
@@ -337,7 +407,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       const loadVoices = () => {
         const voices = synthesisRef.current?.getVoices() || [];
-        selectedVoiceRef.current = selectBestVoice(voices);
+        selectedVoiceRef.current = selectBestVoice(voices, i18n.language);
       };
 
       loadVoices();
@@ -355,7 +425,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
       cancelSpeechSync();
     };
-  }, []);
+  }, [i18n.language]);
 
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) {
@@ -399,23 +469,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const words = cleanText.split(/\s+/).filter((word) => word.length > 0);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    const speechLocale = i18n.language === "hi" ? "hi-IN" : "en-US";
+    utterance.lang = speechLocale;
 
     if (selectedVoiceRef.current) {
       utterance.voice = selectedVoiceRef.current;
     } else {
       const voices = synthesisRef.current?.getVoices() || [];
-      const bestVoice = selectBestVoice(voices);
+      const bestVoice = selectBestVoice(voices, i18n.language);
       if (bestVoice) {
         utterance.voice = bestVoice;
         selectedVoiceRef.current = bestVoice;
-      } else {
-        utterance.lang = "en-US";
       }
     }
 
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    // Optimized parameters for natural-sounding speech
+    // For Hindi, use slightly slower rate for better clarity and naturalness
+    if (i18n.language === "hi") {
+      utterance.rate = 0.9; // Slightly slower for Hindi (better for natural pronunciation)
+      utterance.pitch = 1.0; // Natural pitch
+    } else {
+      utterance.rate = 0.95; // Slightly slower for more natural pace
+      utterance.pitch = 1.0; // Natural pitch
+    }
+    utterance.volume = 1.0; // Full volume
 
     const wordsForHighlighting = words;
     const charToWordMap: number[] = [];
@@ -551,7 +628,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     addMessage(userMessage);
     setInputMessage("");
-    setShowSuggestions(false);
     setIsTyping(true);
 
     try {
@@ -576,8 +652,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const errorMessage: ChatMessage = {
         id: `bot-error-${Date.now()}`,
         type: "bot",
-        content:
-          "I'm sorry, I encountered an error while processing your question. Please try again.",
+        content: t("chat.errorSending"),
         timestamp: new Date(),
         confidence: 0,
       };
@@ -593,18 +668,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       e.preventDefault();
       handleSendMessage();
     }
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return "text-green-400";
-    if (confidence >= 0.6) return "text-yellow-400";
-    return "text-red-400";
-  };
-
-  const getConfidenceIcon = (confidence: number) => {
-    if (confidence >= 0.8) return <CheckCircle className="w-3 h-3" />;
-    if (confidence >= 0.6) return <Clock className="w-3 h-3" />;
-    return <AlertCircle className="w-3 h-3" />;
   };
 
   return (
@@ -724,8 +787,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       className="p-1.5 rounded hover:bg-white/10 transition-colors"
                       title={
                         speakingMessageId === message.id && isSpeaking
-                          ? "Stop speaking"
-                          : "Listen"
+                          ? t("chat.clickToStop")
+                          : t("chat.clickToSpeak")
                       }
                     >
                       {speakingMessageId === message.id && isSpeaking ? (
@@ -750,28 +813,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   })}
                 </span>
 
-                {message.type === "bot" && message.confidence !== undefined && (
+                {message.type === "bot" && message.sources && message.sources > 0 && (
                   <>
                     <span>•</span>
-                    <div
-                      className={`flex items-center gap-1 ${getConfidenceColor(
-                        message.confidence
-                      )}`}
-                    >
-                      {getConfidenceIcon(message.confidence)}
-                      <span>
-                        {(message.confidence * 100).toFixed(0)}% confident
-                      </span>
-                    </div>
-                    {message.sources && message.sources > 0 && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          {message.sources} source
-                          {message.sources > 1 ? "s" : ""}
-                        </span>
-                      </>
-                    )}
+                    <span>
+                      {message.sources} source
+                      {message.sources > 1 ? "s" : ""}
+                    </span>
                   </>
                 )}
               </div>
@@ -784,16 +832,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
           </div>
         ))}
-
-        {/* Suggested Questions - Show when no messages or only welcome message */}
-        {showSuggestions && messages.length <= 1 && (
-          <SuggestedQuestions
-            onSelectQuestion={(question) => {
-              handleSendMessage(question);
-            }}
-            hasKnowledgeBase={hasKnowledgeBase}
-          />
-        )}
 
         {/* Typing Indicator */}
         {isTyping && (
@@ -828,7 +866,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me anything about your life..."
+              placeholder={t("chat.typeMessage")}
               className="min-h-[52px] resize-none bg-black/30 pr-12 text-sm text-white placeholder:text-white/45"
               rows={1}
               disabled={isLoading || isListening}
@@ -848,7 +886,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30"
                 : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
             }`}
-            title={isListening ? "Stop listening" : "Start voice input"}
+            title={isListening ? t("chat.clickToStop") : t("chat.clickToSpeak")}
           >
             {isListening ? (
               <MicOff className="w-5 h-5" />
@@ -860,13 +898,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onClick={() => handleSendMessage()}
             disabled={!inputMessage.trim() || isLoading || isListening}
             className="px-4 py-2 bg-[#E02478] text-white rounded-lg hover:bg-[#E02478]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-[#E02478]/30"
+            title={t("chat.send")}
           >
             <Send className="w-5 h-5" />
           </button>
-        </div>
-
-        <div className="mt-2 text-xs text-white/50 text-center">
-          Ask questions like "When is my daughter's birthday?" or "What medication do I take?"
         </div>
       </div>
     </div>

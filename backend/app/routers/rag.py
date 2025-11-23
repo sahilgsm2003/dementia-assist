@@ -12,6 +12,7 @@ from app.schemas.schemas import (
     DocumentInfo,
     DocumentUploadResponse,
     ChatHistory,
+    SuggestedQuestionsResponse,
 )
 from app.services.auth_service import get_current_user
 from app.services.rag_service import RAGService
@@ -88,11 +89,12 @@ async def chat_query(
                 detail="Question cannot be empty"
             )
         
-        # Get answer from RAG service
+        # Get answer from RAG service with user's language preference
         result = rag_service.answer_question(
             query.question,
             current_user.id,
-            db
+            db,
+            language=current_user.language or "en"
         )
         
         return ChatResponse(
@@ -228,6 +230,29 @@ async def reset_knowledge_base(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error resetting knowledge base: {str(e)}"
+        )
+
+
+@router.get("/suggested-questions", response_model=SuggestedQuestionsResponse)
+async def get_suggested_questions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get suggested questions based on the user's uploaded documents.
+    """
+    try:
+        questions = rag_service.generate_suggested_questions(
+            current_user.id,
+            db,
+            language=current_user.language or "en"
+        )
+        return SuggestedQuestionsResponse(questions=questions)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating suggested questions: {str(e)}"
         )
 
 

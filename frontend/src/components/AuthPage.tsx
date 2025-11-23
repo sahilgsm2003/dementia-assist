@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -10,9 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, User, Lock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Heart, User, Lock, Globe } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface AuthPageProps {
   type: "login" | "register";
@@ -21,11 +30,14 @@ interface AuthPageProps {
 export const AuthPage = ({ type }: AuthPageProps) => {
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { changeLanguage } = useLanguage();
 
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     confirmPassword: "",
+    language: "en",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,15 +48,15 @@ export const AuthPage = ({ type }: AuthPageProps) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
-    if (!formData.username) newErrors.username = "Username is required";
-    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.username) newErrors.username = t("auth.usernameRequired");
+    if (!formData.password) newErrors.password = t("auth.passwordRequired");
 
     if (!showLogin) {
       if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match";
+        newErrors.confirmPassword = t("auth.passwordsDontMatch");
       }
       if (formData.password.length < 6) {
-        newErrors.password = "Password must be at least 6 characters";
+        newErrors.password = t("auth.passwordMinLength");
       }
     }
 
@@ -61,7 +73,9 @@ export const AuthPage = ({ type }: AuthPageProps) => {
         await login(formData.username, formData.password);
         navigate("/home");
       } else {
-        await register(formData.username, formData.password);
+        // Set language before registration
+        await changeLanguage(formData.language as "en" | "hi");
+        await register(formData.username, formData.password, formData.language);
         // Redirect to onboarding after registration
         navigate("/onboarding");
       }
@@ -100,12 +114,12 @@ export const AuthPage = ({ type }: AuthPageProps) => {
             </motion.div>
             <div>
               <CardTitle className="text-2xl md:text-3xl">
-                {showLogin ? "Welcome Back" : "Join Moments"}
+                {showLogin ? t("auth.welcomeBack") : t("auth.joinMoments")}
               </CardTitle>
               <CardDescription className="text-white/70 mt-2 leading-relaxed">
                 {showLogin
-                  ? "Sign in to continue your journey with loved ones"
-                  : "Create your account to start building meaningful connections"}
+                  ? t("auth.signInDescription")
+                  : t("auth.signUpDescription")}
               </CardDescription>
             </div>
           </CardHeader>
@@ -123,14 +137,43 @@ export const AuthPage = ({ type }: AuthPageProps) => {
                 </motion.div>
               )}
 
+              {!showLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="language">{t("auth.selectLanguage")}</Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 z-10" />
+                    <Select
+                      value={formData.language}
+                      onValueChange={(value) => {
+                        handleInputChange("language", value);
+                        changeLanguage(value as "en" | "hi");
+                      }}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger className="pl-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">{t("auth.english")}</SelectItem>
+                        <SelectItem value="hi">{t("auth.hindi")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </motion.div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("auth.username")}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Enter your username"
+                    placeholder={t("auth.username")}
                     value={formData.username}
                     onChange={(e) =>
                       handleInputChange("username", e.target.value)
@@ -151,13 +194,13 @@ export const AuthPage = ({ type }: AuthPageProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={t("auth.password")}
                     value={formData.password}
                     onChange={(e) =>
                       handleInputChange("password", e.target.value)
@@ -183,13 +226,13 @@ export const AuthPage = ({ type }: AuthPageProps) => {
                   animate={{ opacity: 1, height: "auto" }}
                   className="space-y-2"
                 >
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm your password"
+                      placeholder={t("auth.confirmPassword")}
                       value={formData.confirmPassword}
                       onChange={(e) =>
                         handleInputChange("confirmPassword", e.target.value)
@@ -217,24 +260,24 @@ export const AuthPage = ({ type }: AuthPageProps) => {
                 disabled={isLoading}
               >
                 {isLoading
-                  ? "Loading..."
+                  ? t("auth.loading")
                   : showLogin
-                  ? "Sign In"
-                  : "Create Account"}
+                  ? t("auth.signIn")
+                  : t("auth.createAccount")}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-white/70">
                 {showLogin
-                  ? "Don't have an account? "
-                  : "Already have an account? "}
+                  ? t("auth.dontHaveAccount")
+                  : t("auth.alreadyHaveAccount")}{" "}
                 <button
                   onClick={() => setShowLogin(!showLogin)}
                   className="text-[#E02478] hover:underline font-medium transition-colors"
                   disabled={isLoading}
                 >
-                  {showLogin ? "Sign up" : "Sign in"}
+                  {showLogin ? t("auth.signUp") : t("auth.signIn")}
                 </button>
               </p>
             </div>

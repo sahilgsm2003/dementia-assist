@@ -1,5 +1,6 @@
 venv/
 __pycache__/
+family_recognition.db
 *.db
 *.sqlite
 uploads/
@@ -12,3 +13,11 @@ frontend/.env.local
 frontend/.env.*.local
 faiss_indexes/
 Smriti/
+
+# Translation cache
+translation_cache.json
+
+# Google Cloud credentials
+google-translate-key.json
+*-key.json
+*.json.key

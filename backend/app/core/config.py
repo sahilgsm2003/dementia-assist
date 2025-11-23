@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1000
     MAX_CONTEXT_LENGTH: int = 3000
     SIMILARITY_THRESHOLD: float = 0.7
+    
+    # Translation Configuration
+    TRANSLATION_PROVIDER: str = "libretranslate"  # Options: libretranslate, google, deepl
+    TRANSLATION_API_KEY: str = ""  # Required for Google/DeepL
+    LIBRETRANSLATE_URL: str = "https://libretranslate.com/translate"
 
     class Config:
         env_file = ".env"

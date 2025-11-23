@@ -3,8 +3,18 @@ import { navigateTo } from "@/lib/navigation";
 import { API_ENDPOINTS } from "@/lib/constants";
 
 // Create axios instance with base configuration
+// Use proxy in development to avoid CORS issues
+const getBaseURL = () => {
+  // Always use proxy in development mode to avoid CORS and network issues
+  if (import.meta.env.DEV) {
+    return "/api";
+  }
+  // In production, use VITE_API_URL if set, otherwise default to localhost
+  return import.meta.env.VITE_API_URL || "http://localhost:8000";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,9 +23,19 @@ const api = axios.create({
 // Request interceptor to add JWT token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Don't add Authorization header for public auth endpoints
+    const url = config.url || "";
+    const isPublicEndpoint = 
+      url === "/token" || 
+      url.endsWith("/token") ||
+      url === "/users/" || 
+      url.endsWith("/users/");
+    
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -54,16 +74,17 @@ export const authAPI = {
     return response.data;
   },
 
-  register: async (username: string, password: string) => {
+  register: async (username: string, password: string, language: string = "en") => {
     const response = await api.post("/users/", {
       username,
       password,
+      language,
     });
     return response.data;
   },
 
   getCurrentUser: async () => {
-    const response = await api.get("/users/me");
+    const response = await api.get(API_ENDPOINTS.AUTH.CURRENT_USER);
     return response.data;
   },
 };
@@ -111,6 +132,24 @@ export const chatAPI = {
   initializeDemo: async () => {
     const response = await api.post("/rag/initialize-demo");
     return response;
+  },
+
+  getSuggestedQuestions: async () => {
+    const response = await api.get("/rag/suggested-questions");
+    return response.data;
+  },
+};
+
+export const translationAPI = {
+  getProviders: async () => {
+    const response = await api.get("/translation/providers");
+    return response.data;
+  },
+  updateProvider: async (provider: string) => {
+    const response = await api.put("/translation/provider", {
+      translation_provider: provider,
+    });
+    return response.data;
   },
 };
 

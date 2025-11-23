@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface TodaysScheduleProps {
 }
 
 export const TodaysSchedule = ({ reminders, isLoading, className }: TodaysScheduleProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   // Get next 3 reminders, sorted by time
@@ -32,7 +34,7 @@ export const TodaysSchedule = ({ reminders, isLoading, className }: TodaysSchedu
     return (
       <div className={`space-y-4 ${className}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-white">Today's Schedule</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("home.todaysSchedule")}</h2>
         </div>
         <SkeletonList count={3} />
       </div>
@@ -48,11 +50,11 @@ export const TodaysSchedule = ({ reminders, isLoading, className }: TodaysSchedu
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-white">Today's Schedule</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("home.todaysSchedule")}</h2>
           <p className="text-sm text-white/70 mt-1">
             {reminders.length === 0
-              ? "No reminders scheduled for today"
-              : `${reminders.length} reminder${reminders.length === 1 ? "" : "s"} today`}
+              ? t("home.noRemindersScheduled")
+              : `${reminders.length} ${reminders.length === 1 ? t("home.remindersToday") : t("home.remindersTodayPlural")}`}
           </p>
         </div>
         <Button
@@ -61,7 +63,7 @@ export const TodaysSchedule = ({ reminders, isLoading, className }: TodaysSchedu
           onClick={() => navigate("/my-day")}
           className="text-white/70 hover:text-white"
         >
-          View All
+          {t("home.viewAll")}
           <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -70,16 +72,16 @@ export const TodaysSchedule = ({ reminders, isLoading, className }: TodaysSchedu
         <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
           <CardContent className="p-12 text-center">
             <AlarmClock className="h-12 w-12 text-white/30 mx-auto mb-4" />
-            <p className="text-white/70 mb-2">No reminders scheduled</p>
+            <p className="text-white/70 mb-2">{t("home.noRemindersScheduled")}</p>
             <p className="text-sm text-white/50 mb-4">
-              Add reminders to keep your day organized
+              {t("home.noRemindersScheduledDesc")}
             </p>
             <Button
               onClick={() => navigate("/my-day")}
               className="rounded-full"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Reminder
+              {t("home.addReminder")}
             </Button>
           </CardContent>
         </Card>

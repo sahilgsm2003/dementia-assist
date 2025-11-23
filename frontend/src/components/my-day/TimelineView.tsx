@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Calendar, Sun, Sunset, Moon } from "lucide-react";
 import { SkeletonList } from "@/components/shared/SkeletonList";
 import { formatLocalDate, formatDate } from "@/lib/dateUtils";
@@ -23,6 +24,7 @@ interface TimelineViewProps {
 }
 
 export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: TimelineViewProps) => {
+  const { t } = useTranslation();
   const today = new Date();
   const todayFormatted = formatLocalDate(today);
   const todayDisplay = formatDate(today);
@@ -89,11 +91,11 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
             <div>
               <h2 className="text-2xl font-semibold text-white mb-1">{todayDisplay}</h2>
               <p className="text-sm text-white/70">
-                {totalReminders} {totalReminders === 1 ? "reminder" : "reminders"} scheduled
+                {totalReminders} {totalReminders === 1 ? t("myDay.reminder") : t("myDay.remindersScheduled")}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-white/70 mb-1">Progress</p>
+              <p className="text-sm text-white/70 mb-1">{t("myDay.progress")}</p>
               <p className="text-2xl font-bold text-white mb-2">
                 {completedReminders}/{totalReminders}
               </p>
@@ -114,7 +116,7 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
       <div className="space-y-6">
         {/* Morning Section */}
         <DaySection
-          title="Morning"
+          title={t("myDay.morning")}
           icon={Sun}
           timeRange="6 AM - 12 PM"
           reminders={morning}
@@ -125,7 +127,7 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
 
         {/* Afternoon Section */}
         <DaySection
-          title="Afternoon"
+          title={t("myDay.afternoon")}
           icon={Sunset}
           timeRange="12 PM - 6 PM"
           reminders={afternoon}
@@ -136,7 +138,7 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
 
         {/* Evening Section */}
         <DaySection
-          title="Evening"
+          title={t("myDay.evening")}
           icon={Moon}
           timeRange="6 PM - 10 PM"
           reminders={evening}
@@ -158,9 +160,9 @@ export const TimelineView = ({ reminders, onComplete, onDelete, isLoading }: Tim
             <div className="mb-6 rounded-full bg-white/5 p-6">
               <Calendar className="h-16 w-16 text-white/30" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No reminders scheduled for today</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">{t("myDay.noRemindersToday")}</h3>
             <p className="text-sm text-white/50 max-w-md">
-              Add reminders to organize your day and stay on track throughout the day.
+              {t("myDay.noRemindersDescription")}
             </p>
           </div>
         </motion.div>

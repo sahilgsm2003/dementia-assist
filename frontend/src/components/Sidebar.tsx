@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { 
   Home, 
   Calendar, 
@@ -16,31 +17,32 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const mainNavItems = [
-  { icon: Home, label: "Home", path: "/home" },
-  { icon: Calendar, label: "My Day", path: "/my-day" },
-  { icon: Users, label: "My People", path: "/my-people" },
-  { icon: MessageCircle, label: "Ask Moments", path: "/ask-moments" },
-  { icon: MapPin, label: "My Places", path: "/my-places" },
-];
-
-const secondaryNavItems = [
-  { icon: Shield, label: "Safety", path: "/safety" },
-  { icon: Pill, label: "Medications", path: "/medications" },
-];
-
-const settingsNavItems = [
-  { icon: Settings, label: "Settings", path: "/settings" },
-  { icon: HelpCircle, label: "Help", path: "/help" },
-];
-
 interface SidebarProps {
   className?: string;
 }
 
 export const Sidebar = ({ className }: SidebarProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const mainNavItems = [
+    { icon: Home, label: t("sidebar.home"), path: "/home" },
+    { icon: Calendar, label: t("sidebar.myDay"), path: "/my-day" },
+    { icon: Users, label: t("sidebar.myPeople"), path: "/my-people" },
+    { icon: MessageCircle, label: t("sidebar.askMoments"), path: "/ask-moments" },
+    { icon: MapPin, label: t("sidebar.myPlaces"), path: "/my-places" },
+  ];
+
+  const secondaryNavItems = [
+    { icon: Shield, label: t("sidebar.safety"), path: "/safety" },
+    { icon: Pill, label: t("sidebar.medications"), path: "/medications" },
+  ];
+
+  const settingsNavItems = [
+    { icon: Settings, label: t("sidebar.settings"), path: "/settings" },
+    { icon: HelpCircle, label: t("sidebar.help"), path: "/help" },
+  ];
   
   // Safely get auth context
   let logout = () => {};
@@ -139,7 +141,7 @@ export const Sidebar = ({ className }: SidebarProps) => {
         <nav className="mt-auto space-y-1 pt-8 pb-4">
           <div className="mb-6">
             <h2 className="px-3 text-xs font-semibold uppercase tracking-wider text-white/50">
-              Settings
+              {t("sidebar.settings")}
             </h2>
           </div>
           {settingsNavItems.map((item) => {
@@ -171,7 +173,7 @@ export const Sidebar = ({ className }: SidebarProps) => {
             className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
           >
             <LogOut className="h-5 w-5" />
-            <span>Log out</span>
+            <span>{t("sidebar.logout")}</span>
           </button>
         </nav>
       </div>

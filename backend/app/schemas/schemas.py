@@ -11,10 +11,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    language: str = "en"  # Default to English
+    translation_provider: str = "libretranslate"
 
 
 class User(UserBase):
     id: int
+    language: str = "en"
+    translation_provider: str = "libretranslate"
     created_at: datetime
 
     class Config:
@@ -55,6 +59,10 @@ class DocumentUploadResponse(BaseModel):
     filename: str
     chunks_processed: Optional[int] = None
     message: str
+
+
+class SuggestedQuestionsResponse(BaseModel):
+    questions: List[str]
 
 
 class ChatHistory(BaseModel):
@@ -368,6 +376,15 @@ class QuickFactsUpdate(BaseModel):
     address: Optional[str] = None
     birthday: Optional[str] = None
     phone: Optional[str] = None
+
+
+# Language update schema
+class LanguageUpdate(BaseModel):
+    language: str  # 'en' or 'hi'
+
+
+class TranslationProviderUpdate(BaseModel):
+    translation_provider: str  # 'libretranslate', 'google', 'deepl'
 
 
 # Voice Note schemas

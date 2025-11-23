@@ -23,6 +23,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    language = Column(String(10), default="en", nullable=False)  # Language preference: 'en' or 'hi'
+    translation_provider = Column(String(50), default="libretranslate", nullable=False)  # Translation engine preference
     quick_facts = Column(JSON, nullable=True)  # Store quick facts as JSON
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

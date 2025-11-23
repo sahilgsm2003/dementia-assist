@@ -8,20 +8,24 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import {
-  Heart,
   ArrowRight,
   ArrowLeft,
   User,
   Shield,
   Users,
   CheckCircle2,
+  Languages,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { emergencyAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 
 interface OnboardingData {
+  preferredLanguage: "en" | "hi";
+  translationProvider: string;
   // Step 1: Basic Info
   personName: string;
   personPhoto: File | null;
@@ -48,13 +52,17 @@ interface OnboardingData {
   }>;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export const OnboardingFlow = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { language: currentLanguage, changeLanguage } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
+    preferredLanguage: currentLanguage === "hi" ? "hi" : "en",
+    translationProvider: user?.translation_provider || "libretranslate",
     personName: "",
     personPhoto: null,
     relationship: "",
@@ -67,8 +75,31 @@ export const OnboardingFlow = () => {
     homeAddress: "",
     importantPeople: [],
   });
+  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
 
   const progress = (currentStep / TOTAL_STEPS) * 100;
+
+  const handleLanguageSelect = async (lang: "en" | "hi") => {
+    if (lang === onboardingData.preferredLanguage) return;
+    setIsUpdatingLanguage(true);
+    try {
+      await changeLanguage(lang);
+      setOnboardingData((prev) => ({ ...prev, preferredLanguage: lang }));
+      toast({
+        title: t("onboarding.languageSavedTitle"),
+        description: t("onboarding.languageSavedDescription"),
+      });
+    } catch (error) {
+      console.error("Failed to update language during onboarding", error);
+      toast({
+        title: t("common.error"),
+        description: t("onboarding.languageSaveError"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingLanguage(false);
+    }
+  };
 
   const handleNext = () => {
     if (currentStep < TOTAL_STEPS) {
@@ -108,8 +139,8 @@ export const OnboardingFlow = () => {
       }
 
       toast({
-        title: "Success",
-        description: "Onboarding complete! Welcome to Moments.",
+        title: t("onboarding.completeTitle"),
+        description: t("onboarding.completeDescription"),
       });
       
       navigate("/home");
@@ -141,10 +172,13 @@ export const OnboardingFlow = () => {
           <CardHeader className="space-y-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-semibold text-white">
-                Let's set up Moments
+                {t("onboarding.headerTitle")}
               </CardTitle>
               <span className="text-sm text-white/60">
-                Step {currentStep} of {TOTAL_STEPS}
+                {t("onboarding.stepIndicator", {
+                  current: currentStep,
+                  total: TOTAL_STEPS,
+                })}
               </span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -160,24 +194,31 @@ export const OnboardingFlow = () => {
                 transition={{ duration: 0.3 }}
               >
                 {currentStep === 1 && (
+                  <StepLanguage
+                    data={onboardingData}
+                    onLanguageSelect={handleLanguageSelect}
+                    isUpdatingLanguage={isUpdatingLanguage}
+                  />
+                )}
+                {currentStep === 2 && (
                   <Step1BasicInfo
                     data={onboardingData}
                     setData={setOnboardingData}
                   />
                 )}
-                {currentStep === 2 && (
+                {currentStep === 3 && (
                   <Step2Emergency
                     data={onboardingData}
                     setData={setOnboardingData}
                   />
                 )}
-                {currentStep === 3 && (
+                {currentStep === 4 && (
                   <Step3People
                     data={onboardingData}
                     setData={setOnboardingData}
                   />
                 )}
-                {currentStep === 4 && (
+                {currentStep === 5 && (
                   <Step4Complete data={onboardingData} />
                 )}
               </motion.div>
@@ -190,10 +231,12 @@ export const OnboardingFlow = () => {
                 disabled={currentStep === 1}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous
+                {t("onboarding.previous")}
               </Button>
               <Button onClick={handleNext}>
-                {currentStep === TOTAL_STEPS ? "Complete Setup" : "Next"}
+                {currentStep === TOTAL_STEPS
+                  ? t("onboarding.completeSetup")
+                  : t("onboarding.next")}
                 {currentStep < TOTAL_STEPS && (
                   <ArrowRight className="ml-2 h-4 w-4" />
                 )}
@@ -206,6 +249,86 @@ export const OnboardingFlow = () => {
   );
 };
 
+const StepLanguage = ({
+  data,
+  onLanguageSelect,
+  isUpdatingLanguage,
+}: {
+  data: OnboardingData;
+  onLanguageSelect: (lang: "en" | "hi") => Promise<void>;
+  isUpdatingLanguage: boolean;
+}) => {
+  const { t } = useTranslation();
+  const languageOptions: Array<{
+    id: "en" | "hi";
+    label: string;
+    description: string;
+  }> = [
+    {
+      id: "en",
+      label: t("auth.english"),
+      description: t("onboarding.languageEnglishDescription"),
+    },
+    {
+      id: "hi",
+      label: t("auth.hindi"),
+      description: t("onboarding.languageHindiDescription"),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center space-y-2 mb-4">
+        <div className="mx-auto w-16 h-16 bg-[#E02478]/20 rounded-full flex items-center justify-center mb-4">
+          <Languages className="h-8 w-8 text-[#E02478]" />
+        </div>
+        <h3 className="text-xl font-semibold text-white">
+          {t("onboarding.languageStepTitle")}
+        </h3>
+        <p className="text-sm text-white/70">
+          {t("onboarding.languageStepDescription")}
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <Label className="text-white/80">{t("onboarding.languageChoiceTitle")}</Label>
+          <div className="grid gap-3 md:grid-cols-2">
+            {languageOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onLanguageSelect(option.id)}
+                disabled={isUpdatingLanguage}
+                className={`rounded-2xl border px-4 py-4 text-left transition ${
+                  data.preferredLanguage === option.id
+                    ? "border-[#E02478] bg-[#E02478]/10 text-white"
+                    : "border-white/15 bg-black/30 text-white/80 hover:border-white/30"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-base font-semibold">{option.label}</p>
+                    <p className="text-sm text-white/60">{option.description}</p>
+                  </div>
+                  {data.preferredLanguage === option.id && (
+                    <CheckCircle2 className="h-5 w-5 text-[#E02478]" />
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+          {isUpdatingLanguage && (
+            <p className="text-xs text-white/60">
+              {t("onboarding.languageSaving")}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Step 1: Basic Information
 const Step1BasicInfo = ({
   data,
@@ -214,6 +337,7 @@ const Step1BasicInfo = ({
   data: OnboardingData;
   setData: (data: OnboardingData) => void;
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2 mb-6">
@@ -221,21 +345,21 @@ const Step1BasicInfo = ({
           <User className="h-8 w-8 text-[#E02478]" />
         </div>
         <h3 className="text-xl font-semibold text-white">
-          Basic Information
+          {t("onboarding.basicInfo.title")}
         </h3>
         <p className="text-sm text-white/70">
-          Let's start with the basics. Who are you setting this up for?
+          {t("onboarding.basicInfo.subtitle")}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="personName" className="text-white/80">
-            Name of person you're caring for
+            {t("onboarding.basicInfo.personNameLabel")}
           </Label>
           <Input
             id="personName"
-            placeholder="Enter their name"
+            placeholder={t("onboarding.basicInfo.personNamePlaceholder")}
             value={data.personName}
             onChange={(e) =>
               setData({ ...data, personName: e.target.value })
@@ -246,11 +370,11 @@ const Step1BasicInfo = ({
 
         <div className="space-y-2">
           <Label htmlFor="relationship" className="text-white/80">
-            Your relationship
+            {t("onboarding.basicInfo.relationshipLabel")}
           </Label>
           <Input
             id="relationship"
-            placeholder="e.g., Son, Daughter, Spouse, Caregiver"
+            placeholder={t("onboarding.basicInfo.relationshipPlaceholder")}
             value={data.relationship}
             onChange={(e) =>
               setData({ ...data, relationship: e.target.value })
@@ -261,7 +385,7 @@ const Step1BasicInfo = ({
 
         <div className="space-y-2">
           <Label htmlFor="photo" className="text-white/80">
-            Their photo (optional)
+            {t("onboarding.basicInfo.photoLabel")}
           </Label>
           <Input
             id="photo"
@@ -287,6 +411,7 @@ const Step2Emergency = ({
   data: OnboardingData;
   setData: (data: OnboardingData) => void;
 }) => {
+  const { t } = useTranslation();
   const updateEmergencyContact = (
     index: number,
     field: string,
@@ -314,26 +439,27 @@ const Step2Emergency = ({
           <Shield className="h-8 w-8 text-red-400" />
         </div>
         <h3 className="text-xl font-semibold text-white">
-          Emergency Information
+          {t("onboarding.emergency.title")}
         </h3>
         <p className="text-sm text-white/70">
-          This is the most important step. Add emergency contacts and medical
-          information.
+          {t("onboarding.emergency.subtitle")}
         </p>
       </div>
 
       <div className="space-y-6">
         <div>
           <Label className="text-white/80 mb-3 block">
-            Emergency Contacts
+            {t("onboarding.emergency.contactsTitle")}
           </Label>
           {data.emergencyContacts.map((contact, index) => (
             <div key={index} className="space-y-3 mb-4 p-4 border border-white/10 rounded-lg">
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-white/70 text-xs">Name</Label>
+                  <Label className="text-white/70 text-xs">
+                    {t("onboarding.emergency.contactName")}
+                  </Label>
                   <Input
-                    placeholder="Contact name"
+                    placeholder={t("onboarding.emergency.contactNamePlaceholder")}
                     value={contact.name}
                     onChange={(e) =>
                       updateEmergencyContact(index, "name", e.target.value)
@@ -342,9 +468,11 @@ const Step2Emergency = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white/70 text-xs">Phone</Label>
+                  <Label className="text-white/70 text-xs">
+                    {t("onboarding.emergency.contactPhone")}
+                  </Label>
                   <Input
-                    placeholder="Phone number"
+                    placeholder={t("onboarding.emergency.contactPhonePlaceholder")}
                     value={contact.phone}
                     onChange={(e) =>
                       updateEmergencyContact(index, "phone", e.target.value)
@@ -354,9 +482,11 @@ const Step2Emergency = ({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-white/70 text-xs">Relationship</Label>
+                <Label className="text-white/70 text-xs">
+                  {t("onboarding.emergency.contactRelationship")}
+                </Label>
                 <Input
-                  placeholder="e.g., Son, Doctor, Neighbor"
+                  placeholder={t("onboarding.emergency.contactRelationshipPlaceholder")}
                   value={contact.relationship}
                   onChange={(e) =>
                     updateEmergencyContact(
@@ -377,18 +507,18 @@ const Step2Emergency = ({
             onClick={addEmergencyContact}
             className="w-full"
           >
-            Add another contact
+            {t("onboarding.emergency.addContact")}
           </Button>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="medicalConditions" className="text-white/80">
-              Medical Conditions
+              {t("onboarding.emergency.medicalConditions")}
             </Label>
             <Textarea
               id="medicalConditions"
-              placeholder="e.g., Diabetes, High Blood Pressure"
+              placeholder={t("onboarding.emergency.medicalPlaceholder")}
               value={data.medicalConditions}
               onChange={(e) =>
                 setData({ ...data, medicalConditions: e.target.value })
@@ -400,11 +530,11 @@ const Step2Emergency = ({
 
           <div className="space-y-2">
             <Label htmlFor="allergies" className="text-white/80">
-              Allergies
+              {t("onboarding.emergency.allergies")}
             </Label>
             <Input
               id="allergies"
-              placeholder="e.g., Penicillin, Peanuts"
+              placeholder={t("onboarding.emergency.allergiesPlaceholder")}
               value={data.allergies}
               onChange={(e) => setData({ ...data, allergies: e.target.value })}
               className="bg-black/30"
@@ -413,11 +543,11 @@ const Step2Emergency = ({
 
           <div className="space-y-2">
             <Label htmlFor="medications" className="text-white/80">
-              Current Medications
+              {t("onboarding.emergency.medications")}
             </Label>
             <Textarea
               id="medications"
-              placeholder="List current medications"
+              placeholder={t("onboarding.emergency.medicationsPlaceholder")}
               value={data.medications}
               onChange={(e) =>
                 setData({ ...data, medications: e.target.value })
@@ -430,11 +560,11 @@ const Step2Emergency = ({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="doctorName" className="text-white/80">
-                Doctor's Name
+                {t("onboarding.emergency.doctorName")}
               </Label>
               <Input
                 id="doctorName"
-                placeholder="Primary doctor"
+                placeholder={t("onboarding.emergency.doctorNamePlaceholder")}
                 value={data.doctorName}
                 onChange={(e) =>
                   setData({ ...data, doctorName: e.target.value })
@@ -444,11 +574,11 @@ const Step2Emergency = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="doctorPhone" className="text-white/80">
-                Doctor's Phone
+                {t("onboarding.emergency.doctorPhone")}
               </Label>
               <Input
                 id="doctorPhone"
-                placeholder="Phone number"
+                placeholder={t("onboarding.emergency.doctorPhonePlaceholder")}
                 value={data.doctorPhone}
                 onChange={(e) =>
                   setData({ ...data, doctorPhone: e.target.value })
@@ -460,11 +590,11 @@ const Step2Emergency = ({
 
           <div className="space-y-2">
             <Label htmlFor="homeAddress" className="text-white/80">
-              Home Address
+              {t("onboarding.emergency.homeAddress")}
             </Label>
             <Textarea
               id="homeAddress"
-              placeholder="Full address"
+              placeholder={t("onboarding.emergency.homeAddressPlaceholder")}
               value={data.homeAddress}
               onChange={(e) =>
                 setData({ ...data, homeAddress: e.target.value })
@@ -487,6 +617,7 @@ const Step3People = ({
   data: OnboardingData;
   setData: (data: OnboardingData) => void;
 }) => {
+  const { t } = useTranslation();
   const addPerson = () => {
     setData({
       ...data,
@@ -514,11 +645,10 @@ const Step3People = ({
           <Users className="h-8 w-8 text-[#E02478]" />
         </div>
         <h3 className="text-xl font-semibold text-white">
-          Important People
+          {t("onboarding.people.title")}
         </h3>
         <p className="text-sm text-white/70">
-          Who are the most important people in their life? Add family members
-          and close friends.
+          {t("onboarding.people.subtitle")}
         </p>
       </div>
 
@@ -530,9 +660,11 @@ const Step3People = ({
           >
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-white/70 text-xs">Name</Label>
+                <Label className="text-white/70 text-xs">
+                  {t("onboarding.people.personName")}
+                </Label>
                 <Input
-                  placeholder="Person's name"
+                  placeholder={t("onboarding.people.personNamePlaceholder")}
                   value={person.name}
                   onChange={(e) =>
                     updatePerson(index, "name", e.target.value)
@@ -541,9 +673,11 @@ const Step3People = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-white/70 text-xs">Relationship</Label>
+                <Label className="text-white/70 text-xs">
+                  {t("onboarding.people.relationship")}
+                </Label>
                 <Input
-                  placeholder="e.g., Daughter, Son, Friend"
+                  placeholder={t("onboarding.people.relationshipPlaceholder")}
                   value={person.relationship}
                   onChange={(e) =>
                     updatePerson(index, "relationship", e.target.value)
@@ -553,7 +687,9 @@ const Step3People = ({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-white/70 text-xs">Photo (optional)</Label>
+              <Label className="text-white/70 text-xs">
+                {t("onboarding.people.photoLabel")}
+              </Label>
               <Input
                 type="file"
                 accept="image/*"
@@ -573,12 +709,12 @@ const Step3People = ({
           onClick={addPerson}
           className="w-full"
         >
-          Add person
+          {t("onboarding.people.addPerson")}
         </Button>
 
         {data.importantPeople.length === 0 && (
           <p className="text-sm text-white/60 text-center py-4">
-            You can add people later. Click "Add person" to start.
+            {t("onboarding.people.emptyState")}
           </p>
         )}
       </div>
@@ -588,6 +724,8 @@ const Step3People = ({
 
 // Step 4: Complete
 const Step4Complete = ({ data }: { data: OnboardingData }) => {
+  const { t } = useTranslation();
+  const name = data.personName || t("onboarding.completeDefaultName");
   return (
     <div className="space-y-6 text-center">
       <div className="text-center space-y-2 mb-6">
@@ -600,13 +738,12 @@ const Step4Complete = ({ data }: { data: OnboardingData }) => {
           <CheckCircle2 className="h-8 w-8 text-[#E02478]" />
         </motion.div>
         <h3 className="text-xl font-semibold text-white">
-          You're all set!
+          {t("onboarding.finalStepTitle")}
         </h3>
         <p className="text-sm text-white/70">
-          Moments is ready to help {data.personName || "your loved one"} remember what matters most.
+          {t("onboarding.finalStepSubtitle", { name })}
         </p>
       </div>
     </div>
   );
 };
-

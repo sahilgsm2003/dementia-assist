@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -23,6 +24,7 @@ interface Reminder {
 }
 
 export const MyDayPage = () => {
+  const { t } = useTranslation();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate] = useState(new Date()); // Focus on today
@@ -41,7 +43,7 @@ export const MyDayPage = () => {
     } catch (error) {
       console.error("Failed to load reminders", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -65,8 +67,8 @@ export const MyDayPage = () => {
       if (newStatus === "completed") {
         await remindersAPI.completeReminder(id);
         toast({
-          title: "Completed",
-          description: "Reminder marked as complete",
+          title: t("common.completed"),
+          description: t("common.reminderMarkedComplete"),
         });
       } else {
         // To uncomplete, we'd need an API endpoint - for now just reload
@@ -77,7 +79,7 @@ export const MyDayPage = () => {
       loadReminders();
       console.error("Failed to complete reminder", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -89,13 +91,13 @@ export const MyDayPage = () => {
       await remindersAPI.deleteReminder(id);
       setReminders((prev) => prev.filter((r) => r.id !== id));
       toast({
-        title: "Deleted",
-        description: "Reminder removed",
+        title: t("common.deleted"),
+        description: t("common.reminderRemoved"),
       });
     } catch (error) {
       console.error("Failed to delete reminder", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -113,7 +115,7 @@ export const MyDayPage = () => {
           className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/80 ring-1 ring-white/15 backdrop-blur mb-4"
         >
           <Calendar className="h-4 w-4 text-[#E02478]" />
-          My Day
+          {t("myDay.title")}
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
@@ -121,10 +123,10 @@ export const MyDayPage = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-3xl font-semibold tracking-tight text-white md:text-4xl mb-3"
         >
-          Your day, organized and clear.
+          {t("myDay.heading")}
         </motion.h1>
         <p className="text-base text-white/70 mb-6">
-          See your schedule at a glance, check off completed items, and stay on track throughout the day.
+          {t("myDay.description")}
         </p>
         
         {/* Action Buttons */}
@@ -133,21 +135,21 @@ export const MyDayPage = () => {
             <ExportDialog
               type="daily-routine"
               elementId="daily-routine-print"
-              title="Daily Routine"
+              title={t("myDay.dailyRoutine")}
             />
           )}
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
               <Button className="rounded-full bg-[#E02478] px-6 py-6 text-base font-semibold text-white hover:bg-[#E02478]/85 shadow-lg shadow-[#E02478]/20">
                 <Plus className="mr-2 h-5 w-5" />
-                Add Reminder
+                {t("myDay.addReminder")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add Reminder</DialogTitle>
+                <DialogTitle>{t("myDay.addReminderTitle")}</DialogTitle>
                 <DialogDescription>
-                  Create a new reminder for your day
+                  {t("myDay.addReminderDescription")}
                 </DialogDescription>
               </DialogHeader>
               <ReminderForm
@@ -165,8 +167,8 @@ export const MyDayPage = () => {
       {/* Timeline View */}
       <div className="space-y-6">
         <div id="daily-routine-print" className="print-view hidden print:block">
-          <h2 className="text-2xl font-bold mb-4">Daily Routine</h2>
-          <p className="text-sm text-gray-600 mb-6">Generated on {new Date().toLocaleDateString()}</p>
+          <h2 className="text-2xl font-bold mb-4">{t("myDay.dailyRoutine")}</h2>
+          <p className="text-sm text-gray-600 mb-6">{t("myDay.generatedOn")} {new Date().toLocaleDateString()}</p>
           <TimelineView
             reminders={reminders}
             onComplete={handleComplete}

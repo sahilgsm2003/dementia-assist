@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     MAX_CONTEXT_LENGTH: int = 3000
     SIMILARITY_THRESHOLD: float = 0.7
 
+    # Translation Configuration
+    TRANSLATION_PROVIDER: str = "libretranslate"  # Options: libretranslate, google, deepl
+    TRANSLATION_API_KEY: str = ""  # Required for google and deepl providers
+    LIBRETRANSLATE_URL: str = "https://libretranslate.com/translate"  # LibreTranslate API endpoint
+
     class Config:
         env_file = ".env"
 

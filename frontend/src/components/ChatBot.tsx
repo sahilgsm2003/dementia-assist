@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
@@ -10,8 +11,10 @@ import {
   MicOff,
   Volume2,
   VolumeX,
+  Loader2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { voiceCloneAPI } from "@/services/api";
 
 interface ChatMessage {
   id: string;
@@ -40,6 +43,15 @@ interface SpeechSyncState {
   totalWords: number;
   lastEstimatedIndex: number;
   lastBoundaryIndex: number;
+}
+
+interface VoiceCloneStatus {
+  has_voice_profile: boolean;
+  voice_profile: {
+    id: number;
+    language: string;
+    is_active: boolean;
+  } | null;
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({
@@ -91,6 +103,11 @@ const ChatBot: React.FC<ChatBotProps> = ({
   const boundaryEventFiredRef = useRef<boolean>(false);
   const animationFrameRef = useRef<number | null>(null);
   const speechSyncRef = useRef<SpeechSyncState | null>(null);
+  
+  // Voice cloning state
+  const [voiceCloneStatus, setVoiceCloneStatus] = useState<VoiceCloneStatus | null>(null);
+  const [isLoadingVoiceClone, setIsLoadingVoiceClone] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getNow = () =>
     typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -159,6 +176,20 @@ const ChatBot: React.FC<ChatBotProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load voice clone status on mount and when language changes
+  useEffect(() => {
+    const loadVoiceCloneStatus = async () => {
+      try {
+        const status = await voiceCloneAPI.getStatus();
+        setVoiceCloneStatus(status);
+      } catch (error) {
+        console.log("Voice cloning not available:", error);
+        setVoiceCloneStatus(null);
+      }
+    };
+    loadVoiceCloneStatus();
+  }, [language]);
 
   // Select the best available voice for natural-sounding speech
   const selectBestVoice = (
@@ -404,8 +435,109 @@ const ChatBot: React.FC<ChatBotProps> = ({
     }
   };
 
-  // Speak message with word highlighting
-  const speakMessage = (messageId: string, text: string) => {
+  // Speak message with cloned voice (using API)
+  const speakWithClonedVoice = async (messageId: string, text: string) => {
+    console.log("[VoiceClone] speakWithClonedVoice called");
+    
+    // Stop any ongoing speech first
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (synthesisRef.current) {
+      synthesisRef.current.cancel();
+    }
+    
+    if (isSpeaking && speakingMessageId === messageId) {
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+      setHighlightedWordIndex(-1);
+      return;
+    }
+
+    setIsLoadingVoiceClone(true);
+    setSpeakingMessageId(messageId);
+    
+    try {
+      // Get synthesized audio from API
+      console.log("[VoiceClone] Requesting synthesis for:", text.substring(0, 50) + "...", "language:", language);
+      const audioBlob = await voiceCloneAPI.synthesizeStream(text, language);
+      console.log("[VoiceClone] Got audio blob:", audioBlob.size, "bytes");
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      // Preload the audio to prevent first words from being clipped
+      audio.preload = "auto";
+      
+      // Set up word highlighting estimation
+      const words = text.replace(/\n/g, " ").replace(/\s+/g, " ").trim().split(/\s+/).filter(w => w.length > 0);
+      const estimatedDuration = words.length * 0.3; // Rough estimate: 0.3 seconds per word
+      
+      audio.onplay = () => {
+        setIsSpeaking(true);
+        setIsLoadingVoiceClone(false);
+        setHighlightedWordIndex(0);
+        
+        // Simple word highlighting based on time
+        let wordIndex = 0;
+        const highlightInterval = setInterval(() => {
+          if (wordIndex < words.length - 1) {
+            wordIndex++;
+            setHighlightedWordIndex(wordIndex);
+          } else {
+            clearInterval(highlightInterval);
+          }
+        }, (estimatedDuration / words.length) * 1000);
+        
+        audio.onended = () => {
+          clearInterval(highlightInterval);
+          setIsSpeaking(false);
+          setSpeakingMessageId(null);
+          setHighlightedWordIndex(-1);
+          URL.revokeObjectURL(audioUrl);
+          audioRef.current = null;
+        };
+        
+        audio.onpause = () => {
+          clearInterval(highlightInterval);
+        };
+      };
+      
+      audio.onerror = () => {
+        setIsLoadingVoiceClone(false);
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+        URL.revokeObjectURL(audioUrl);
+        audioRef.current = null;
+        
+        // Fallback to browser TTS
+        console.log("Cloned voice failed, falling back to browser TTS");
+        speakWithBrowserTTS(messageId, text);
+      };
+      
+      // Wait for audio to be ready, then add a small delay to prevent first words from being clipped
+      await new Promise<void>((resolve) => {
+        audio.oncanplaythrough = () => resolve();
+        audio.load();
+      });
+      
+      // Add 150ms delay to let audio system warm up
+      await new Promise(resolve => setTimeout(resolve, 150));
+      await audio.play();
+    } catch (error) {
+      console.error("Voice clone synthesis error:", error);
+      setIsLoadingVoiceClone(false);
+      setSpeakingMessageId(null);
+      
+      // Fallback to browser TTS
+      speakWithBrowserTTS(messageId, text);
+    }
+  };
+
+  // Speak message with browser TTS (original implementation)
+  const speakWithBrowserTTS = (messageId: string, text: string) => {
     if (!synthesisRef.current) {
       toast({
         title: t("chat.ttsUnsupportedTitle"),
@@ -425,12 +557,20 @@ const ChatBot: React.FC<ChatBotProps> = ({
       return;
     }
 
+    // Cancel any pending speech and give audio system time to initialize
+    synthesisRef.current.cancel();
+
     // Clean text and split into words for highlighting
     // Preserve the original text structure for accurate word matching
     const cleanText = text.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
     const words = cleanText.split(/\s+/).filter((word) => word.length > 0);
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+    // Add a small delay before speaking to prevent first words from being clipped
+    // This gives the audio system time to warm up
+    setTimeout(() => {
+      if (!synthesisRef.current) return;
+      
+      const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = speechLocale;
 
     // Use the selected voice if available
@@ -593,21 +733,63 @@ const ChatBot: React.FC<ChatBotProps> = ({
       cancelSpeechSync();
     };
 
-    utteranceRef.current = utterance;
-    setSpeakingMessageId(messageId);
-    setIsSpeaking(true);
-    synthesisRef.current.speak(utterance);
+      utteranceRef.current = utterance;
+      setSpeakingMessageId(messageId);
+      setIsSpeaking(true);
+      synthesisRef.current.speak(utterance);
+    }, 150); // 150ms delay to let audio system warm up and prevent first words from being clipped
   };
 
-  // Stop speaking
+  // Speak message - chooses between cloned voice and browser TTS
+  const speakMessage = async (messageId: string, text: string) => {
+    // For English, always use browser TTS - no voice cloning
+    if (language !== "hi") {
+      console.log("[VoiceClone] English language - using browser TTS only");
+      speakWithBrowserTTS(messageId, text);
+      return;
+    }
+    
+    // For Hindi, check voice cloning status
+    let currentStatus = voiceCloneStatus;
+    try {
+      const freshStatus = await voiceCloneAPI.getStatus();
+      setVoiceCloneStatus(freshStatus);
+      currentStatus = freshStatus;
+    } catch (e) {
+      console.log("Could not refresh voice clone status:", e);
+    }
+
+    // Check if voice cloning is available and active
+    console.log("[VoiceClone] Status:", currentStatus);
+    if (currentStatus?.has_voice_profile && currentStatus?.voice_profile?.is_active) {
+      console.log("[VoiceClone] Using cloned voice");
+      speakWithClonedVoice(messageId, text);
+      return;
+    }
+    
+    // Fall back to browser TTS
+    console.log("[VoiceClone] Using browser TTS");
+    speakWithBrowserTTS(messageId, text);
+  };
+
+  // Stop speaking (handles both cloned voice and browser TTS)
   const stopSpeaking = () => {
+    // Stop cloned voice audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    
+    // Stop browser TTS
     if (synthesisRef.current) {
       synthesisRef.current.cancel();
+    }
+    
       setIsSpeaking(false);
+    setIsLoadingVoiceClone(false);
       setSpeakingMessageId(null);
       setHighlightedWordIndex(-1);
       cancelSpeechSync();
-    }
   };
 
   const handleSendMessage = async () => {
@@ -775,25 +957,36 @@ const ChatBot: React.FC<ChatBotProps> = ({
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       onClick={() => {
-                        if (speakingMessageId === message.id && isSpeaking) {
+                        if (speakingMessageId === message.id && (isSpeaking || isLoadingVoiceClone)) {
                           stopSpeaking();
                         } else {
                           speakMessage(message.id, message.content);
                         }
                       }}
-                      className="p-1.5 rounded hover:bg-white/10 transition-colors"
+                      disabled={isLoadingVoiceClone && speakingMessageId !== message.id}
+                      className="p-1.5 rounded hover:bg-white/10 transition-colors disabled:opacity-50"
                       title={
                         speakingMessageId === message.id && isSpeaking
                           ? t("chat.stopSpeaking")
+                          : speakingMessageId === message.id && isLoadingVoiceClone
+                          ? t("chat.loadingVoice", "Loading voice...")
                           : t("chat.listen")
                       }
                     >
-                      {speakingMessageId === message.id && isSpeaking ? (
+                      {speakingMessageId === message.id && isLoadingVoiceClone ? (
+                        <Loader2 className="w-4 h-4 text-[#E02478] animate-spin" />
+                      ) : speakingMessageId === message.id && isSpeaking ? (
                         <VolumeX className="w-4 h-4 text-[#E02478]" />
                       ) : (
                         <Volume2 className="w-4 h-4 text-white/70 hover:text-[#E02478]" />
                       )}
                     </button>
+                    {/* Voice clone indicator */}
+                    {voiceCloneStatus?.has_voice_profile && voiceCloneStatus?.voice_profile?.is_active && (
+                      <span className="text-[10px] text-[#E02478]/70 flex items-center gap-1" title={t("chat.clonedVoice", "Using cloned voice")}>
+                        <Mic className="w-3 h-3" />
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

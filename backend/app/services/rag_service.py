@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.services.vector_service import VectorService
 from app.models.models import ChatMessage, Document
 from app.services.document_service import process_pdf, store_document_chunks
-from app.services.translation_service import translation_service
+from app.services.gemini_translation_service import gemini_translation_service
 
 
 class RAGService:
@@ -89,6 +89,15 @@ class RAGService:
             'मेरा बेटा कौन है': 'mera beta kaun hai',
             'मेरी पत्नी कौन है': 'meri patni kaun hai',
             'मेरा पति कौन है': 'mera pati kaun hai',
+            # Additional words
+            'इंश्योरेंस': 'insurance',
+            'बीमा': 'bima',
+            'बताओ': 'batao',
+            'बारे': 'bare',
+            'जानकारी': 'jankari',
+            'दो': 'do',
+            'बेटे': 'bete',
+            'डॉक्टर': 'doctor',
         }
         
         # First, try to match whole phrases
@@ -214,6 +223,23 @@ class RAGService:
             "mera naam kya hai": "what is my name",
             "meri umar": "my age",
             "meri umar kya hai": "what is my age",
+            
+            # Insurance questions
+            "mere insurance ke bare mein batao": "tell me about my insurance",
+            "mere insurance ke baar me batao": "tell me about my insurance",
+            "mere insurance ke baar me jankari do": "give me information about my insurance",
+            "mera insurance": "my insurance",
+            "mera bima": "my insurance",
+            "mere bima ke bare mein": "about my insurance",
+            
+            # Doctor questions
+            "mere doctor ki jankari do": "give me information about my doctor",
+            "mera doctor": "my doctor",
+            
+            # Son questions
+            "mere bete ka naam kya hai": "what is my son's name",
+            "mera beta": "my son",
+            "mere bete": "my son",
         }
         
         # Try exact match first
@@ -238,12 +264,24 @@ class RAGService:
             "kaise": "how",
             "beti": "daughter",
             "beta": "son",
+            "bete": "son",
             "patni": "wife",
             "pati": "husband",
             "dawai": "medicine",
             "ghar": "home",
             "aaj": "today",
             "naam": "name",
+            "insurance": "insurance",
+            "bima": "insurance",
+            "batao": "tell me about",
+            "bataao": "tell me about",
+            "bare": "about",
+            "baar": "about",
+            "baare": "about",
+            "jankari": "information",
+            "jaankari": "information",
+            "do": "give",
+            "doctor": "doctor",
         }
         
         # Try to translate word by word
@@ -285,37 +323,46 @@ class RAGService:
             # If query is in Hindi, translate to English for document search
             # (documents are typically in English, so we need English query for vector search)
             search_query = query
+            original_query = query
+            
             if language == "hi":
-                # Check if query is in Devanagari script
-                if self._is_devanagari(query):
-                    print(f"[RAG] Detected Devanagari script in query, transliterating to Latin script")
-                    # Transliterate Devanagari to Latin script (Hinglish) first
-                    latin_query = self._devanagari_to_latin(query)
-                    print(f"[RAG] Transliterated '{query}' to '{latin_query}'")
-                    query = latin_query  # Use transliterated version for further processing
+                print(f"[RAG] Hindi query detected: '{query}'")
                 
                 try:
-                    # Translate Hindi query to English for better document retrieval
-                    search_query = translation_service.translate(
-                        query,
-                        target_lang="en",
-                        source_lang="hi"
-                    )
+                    # Use Gemini-based translation service for high-quality translation
+                    # It handles both Devanagari and Hinglish (Roman Hindi)
+                    search_query = gemini_translation_service.translate_hindi_to_english(query)
                     
-                    # Check if translation actually worked (not just returned original)
-                    if search_query == query or not search_query or search_query.strip() == "":
-                        # Translation failed, try fallback keyword translation
-                        print(f"[RAG] Translation API returned original text, trying keyword-based fallback")
-                        search_query = self._fallback_hindi_translation(query)
+                    if search_query and search_query != query and search_query.strip():
+                        print(f"[RAG] Gemini translated: '{query}' -> '{search_query}'")
                     else:
-                        print(f"[RAG] Translated Hindi query '{query}' to English '{search_query}' for document search")
+                        # Gemini translation didn't work, try manual transliteration + fallback
+                        print(f"[RAG] Gemini translation returned same text, trying fallback")
+                        
+                        # Check if query is in Devanagari script
+                        if self._is_devanagari(query):
+                            latin_query = self._devanagari_to_latin(query)
+                            print(f"[RAG] Transliterated Devanagari to: '{latin_query}'")
+                            search_query = self._fallback_hindi_translation(latin_query)
+                        else:
+                            search_query = self._fallback_hindi_translation(query)
+                        
+                        if search_query != query:
+                            print(f"[RAG] Fallback translated: '{query}' -> '{search_query}'")
+                        else:
+                            print(f"[RAG] All translations failed, using original query")
+                            
                 except Exception as e:
-                    print(f"[RAG] Warning: Failed to translate query for search: {e}")
-                    print(f"[RAG] Attempting keyword-based fallback translation")
-                    # Try fallback keyword translation
-                    search_query = self._fallback_hindi_translation(query)
-                    if search_query == query:
-                        print(f"[RAG] Fallback translation also failed, using original query")
+                    print(f"[RAG] Translation error: {e}")
+                    # Fallback to keyword-based translation
+                    if self._is_devanagari(query):
+                        latin_query = self._devanagari_to_latin(query)
+                        search_query = self._fallback_hindi_translation(latin_query)
+                    else:
+                        search_query = self._fallback_hindi_translation(query)
+                    
+                    if search_query != query:
+                        print(f"[RAG] Fallback translated after error: '{query}' -> '{search_query}'")
             
             # Preprocess the query
             processed_query = self.preprocess_query(search_query)
@@ -369,16 +416,21 @@ class RAGService:
         """
         language_instruction = ""
         if language == "hi":
-            language_instruction = """IMPORTANT: Respond entirely in Hindi (हिंदी). Use Devanagari script. 
-CRITICAL: Avoid using "है।" (hai with period) at the end of sentences as it causes TTS pronunciation issues. 
-Instead, use alternatives like:
-- "है" (without period)
-- "हैं" (plural form when appropriate)
-- "होता है" or "होती है" (for "happens/is")
-- Rephrase sentences to avoid ending with "है।"
-Example: Instead of "यह सही है।" use "यह सही है" or "यह सही होता है" """
+            language_instruction = """CRITICAL INSTRUCTIONS FOR HINDI RESPONSE:
+1. Respond ONLY in simple conversational Hindi using Devanagari script
+2. DO NOT use any punctuation marks - no periods, commas, exclamation marks, question marks
+3. DO NOT use any numbers - write them as words like एक दो तीन
+4. DO NOT use any special symbols or English words
+5. Use simple everyday Hindi words that are easy to pronounce
+6. Keep sentences short and natural
+7. Avoid complex conjunct consonants when simpler words exist
+8. End sentences naturally without any punctuation
+
+Example of GOOD response: आपकी बेटी का नाम सुनीता है वह दिल्ली में रहती है
+Example of BAD response: आपकी बेटी का नाम सुनीता है। वह दिल्ली में रहती है!"""
         else:
-            language_instruction = "IMPORTANT: Respond entirely in English. "
+            language_instruction = """IMPORTANT: Respond entirely in English.
+Keep responses simple and clear. Avoid complex punctuation."""
         
         has_context = context and "No relevant information" not in context
         

@@ -1,4 +1,4 @@
-venv/
+venv311/
 __pycache__/
 family_recognition.db
 *.db
@@ -13,6 +13,11 @@ frontend/.env.local
 frontend/.env.*.local
 faiss_indexes/
 Smriti/
+
+# Voice cloning cache
+voice_models/
+voice_cache/
+demo_cache/
 
 # Translation cache
 translation_cache.json

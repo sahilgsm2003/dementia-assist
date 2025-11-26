@@ -12,9 +12,18 @@ python-jose[cryptography]
 google-generativeai
 faiss-cpu
 pypdf2
-numpy
+numpy<2.0.0
+pandas<2.1.0
 face-recognition
 Pillow
 cmake
 setuptools
 httpx
+# Voice Cloning dependencies (XTTS v2) - Requires Python 3.9-3.11
+TTS>=0.22.0
+torch>=2.0.0,<2.6.0
+torchaudio>=2.0.0,<2.6.0
+transformers>=4.33.0,<4.40.0
+scipy
+pydub
+soundfile

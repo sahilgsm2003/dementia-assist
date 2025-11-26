@@ -37,6 +37,7 @@ class User(Base):
     medications = relationship("Medication", back_populates="user", cascade="all, delete-orphan")
     emergency_info = relationship("EmergencyInfo", back_populates="user", cascade="all, delete-orphan")
     voice_notes = relationship("VoiceNote", back_populates="user", cascade="all, delete-orphan")
+    voice_profile = relationship("VoiceProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     family_memberships = relationship("FamilyMember", back_populates="user", primaryjoin="User.id == FamilyMember.user_id", cascade="all, delete-orphan")
     created_families = relationship("FamilyGroup", back_populates="owner", foreign_keys="FamilyGroup.owner_id")
 
@@ -219,3 +220,18 @@ class VoiceNote(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user = relationship("User", back_populates="voice_notes")
+
+
+class VoiceProfile(Base):
+    """Store voice samples for voice cloning per user"""
+    __tablename__ = "voice_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    sample_audio_path = Column(String(500), nullable=False)  # Path to reference audio file
+    language = Column(String(10), default="en", nullable=False)  # en or hi
+    is_active = Column(Integer, default=1, nullable=False)  # 1 = enabled, 0 = disabled
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="voice_profile")

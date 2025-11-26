@@ -122,7 +122,7 @@ async def update_translation_provider(
             detail="Requested provider is not available. Please configure the required API key.",
         )
     
-    db_user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    db_user = db.query(User).filter(User.id == current_user.id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     

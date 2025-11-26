@@ -540,4 +540,114 @@ export const familyAPI = {
   },
 };
 
+// Voice Clone API - For cloning voices and synthesizing speech
+export const voiceCloneAPI = {
+  // Get voice cloning status for current user
+  getStatus: async () => {
+    const response = await api.get("/voice-clone/status");
+    return response.data;
+  },
+
+  // Upload a voice sample for cloning
+  uploadSample: async (audioFile: File | Blob, language: string = "en") => {
+    const formData = new FormData();
+    formData.append("audio_file", audioFile, audioFile instanceof File ? audioFile.name : "voice-sample.wav");
+    formData.append("language", language);
+
+    const response = await api.post("/voice-clone/upload-sample", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  // Synthesize speech with cloned voice
+  synthesize: async (text: string, language?: string) => {
+    const response = await api.post("/voice-clone/synthesize", {
+      text,
+      language,
+    });
+    return response.data;
+  },
+
+  // Get synthesized speech as audio stream
+  synthesizeStream: async (text: string, language?: string): Promise<Blob> => {
+    const response = await api.post(
+      "/voice-clone/synthesize-stream",
+      { text, language },
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
+  // Delete voice profile
+  deleteProfile: async () => {
+    const response = await api.delete("/voice-clone/profile");
+    return response.data;
+  },
+
+  // Toggle voice cloning on/off
+  toggleProfile: async () => {
+    const response = await api.put("/voice-clone/profile/toggle");
+    return response.data;
+  },
+
+  // Preload the voice cloning model (for faster first synthesis)
+  preloadModel: async () => {
+    const response = await api.post("/voice-clone/preload-model");
+    return response.data;
+  },
+
+  // ========== DEMO CACHING ==========
+
+  // Get test voice with persistent cache (same audio every time)
+  testVoiceCached: async (language: string = "hi", forceRegenerate: boolean = false): Promise<Blob> => {
+    const response = await api.post(
+      "/voice-clone/test-voice",
+      { language, force_regenerate: forceRegenerate },
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
+  // Get demo questions for a language
+  getDemoQuestions: async (language: string = "hi") => {
+    const response = await api.get(`/voice-clone/demo-questions?language=${language}`);
+    return response.data;
+  },
+
+  // Cache a demo answer (with voice)
+  cacheDemoAnswer: async (question: string, answer: string, language: string = "hi") => {
+    const response = await api.post("/voice-clone/cache-demo-answer", {
+      question,
+      answer,
+      language,
+    });
+    return response.data;
+  },
+
+  // Get cached demo answer
+  getCachedDemo: async (question: string, language: string = "hi") => {
+    const response = await api.post(`/voice-clone/get-cached-demo?question=${encodeURIComponent(question)}&language=${language}`);
+    return response.data;
+  },
+
+  // Play cached voice for a demo question
+  playCachedVoice: async (question: string, language: string = "hi"): Promise<Blob> => {
+    const response = await api.post(
+      `/voice-clone/play-cached-voice?question=${encodeURIComponent(question)}&language=${language}`,
+      {},
+      { responseType: "blob" }
+    );
+    return response.data;
+  },
+
+  // Clear all demo cache
+  clearDemoCache: async () => {
+    const response = await api.delete("/voice-clone/clear-demo-cache");
+    return response.data;
+  },
+};
+
 export default api;

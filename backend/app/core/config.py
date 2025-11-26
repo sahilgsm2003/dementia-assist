@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     TRANSLATION_API_KEY: str = ""  # Required for google and deepl providers
     LIBRETRANSLATE_URL: str = "https://libretranslate.com/translate"  # LibreTranslate API endpoint
 
+    # Voice Cloning Configuration (XTTS v2)
+    VOICE_CLONE_ENABLED: bool = True  # Enable/disable voice cloning feature
+    VOICE_MODELS_DIR: str = "./voice_models"  # Directory to store downloaded models
+    VOICE_CACHE_DIR: str = "./voice_cache"  # Directory to cache generated audio
+    VOICE_MAX_TEXT_LENGTH: int = 1000  # Maximum text length for synthesis
+
     class Config:
         env_file = ".env"
 
